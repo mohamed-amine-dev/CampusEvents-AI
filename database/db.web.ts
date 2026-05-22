@@ -213,13 +213,27 @@ export function executeSql(sql: string, params?: any[]): void {
 export function queryAll(sql: string, params?: any[]): any[] {
   sql = sql.trim()
   params = params || []
+
+  const isCount = /COUNT\s*\(\s*\*\s*\)/i.test(sql)
+  const countAliasMatch = sql.match(/COUNT\s*\(\s*\*\s*\)\s*(?:as\s+)?(\w+)/i)
+
   const { table, conditions, orderBy, limit } = parseSelect(sql)
 
-  if (!tables[table]) return []
+  if (!tables[table]) return isCount ? [{ [countAliasMatch?.[1] || 'count']: 0 }] : []
 
   let rows = [...tables[table]]
   if (conditions.length > 0) {
     rows = rows.filter((row) => matchesRow(row, conditions, params))
+  }
+
+  if (isCount) {
+    const alias = countAliasMatch?.[1] || 'count'
+    return [{ [alias]: rows.length }]
+  }
+
+  const isSelect1 = /^SELECT\s+1\b/i.test(sql.trim())
+  if (isSelect1) {
+    return rows.length > 0 ? [rows[0]] : []
   }
 
   if (orderBy) {
@@ -244,40 +258,42 @@ export function queryFirst(sql: string, params?: any[]): any | null {
 }
 
 export function execBatch(sql: string): void {
-  sql = sql.trim()
-  if (/^PRAGMA\b/i.test(sql)) return
-  if (/^CREATE\s+TABLE\b/i.test(sql)) {
-    const nameMatch = sql.match(/CREATE\s+TABLE\s+(?:\w+\s+)?(\w+)/i)
-    if (!nameMatch) return
-    const tableName = nameMatch[1].toLowerCase()
-    if (tables[tableName]) return
-    tables[tableName] = []
+  const statements = sql.split(';').map((s) => s.trim()).filter(Boolean)
+  for (const stmt of statements) {
+    if (/^PRAGMA\b/i.test(stmt)) continue
+    if (/^CREATE\s+TABLE\b/i.test(stmt)) {
+      const nameMatch = stmt.match(/CREATE\s+TABLE\s+(?:\w+\s+)?(\w+)/i)
+      if (!nameMatch) continue
+      const tableName = nameMatch[1].toLowerCase()
+      if (tables[tableName]) continue
+      tables[tableName] = []
 
-    const colsMatch = sql.match(/\(([\s\S]*)\)/)
-    if (colsMatch) {
-      const colDefs = colsMatch[1].split(',').map((s) => s.trim()).filter((s) => !/^FOREIGN\s+KEY/i.test(s) && !/^PRIMARY\s+KEY/i.test(s))
-      let pk: string | undefined
-      const pkMatch = colsMatch[1].match(/PRIMARY\s+KEY\s*\((\w+)\)/i)
-      if (pkMatch) pk = pkMatch[1].toLowerCase()
+      const colsMatch = stmt.match(/\(([\s\S]*?)\)\s*$/)
+      if (colsMatch) {
+        const colDefs = colsMatch[1].split(',').map((s) => s.trim()).filter((s) => !/^FOREIGN\s+KEY/i.test(s) && !/^PRIMARY\s+KEY/i.test(s))
+        let pk: string | undefined
+        const pkMatch = colsMatch[1].match(/PRIMARY\s+KEY\s*\((\w+)\)/i)
+        if (pkMatch) pk = pkMatch[1].toLowerCase()
 
-      schemas[tableName] = {
-        name: tableName,
-        columns: [],
-        primaryKey: pk,
-      }
+        schemas[tableName] = {
+          name: tableName,
+          columns: [],
+          primaryKey: pk,
+        }
 
-      for (const def of colDefs) {
-        const m = def.match(/^\s*(\w+)\s+(\w+)(.*)/)
-        if (m) {
-          schemas[tableName].columns.push({
-            name: m[1].toLowerCase(),
-            type: m[2],
-            constraints: m[3] || '',
-          })
+        for (const def of colDefs) {
+          const m = def.match(/^\s*(\w+)\s+(\w+)(.*)/)
+          if (m) {
+            schemas[tableName].columns.push({
+              name: m[1].toLowerCase(),
+              type: m[2],
+              constraints: m[3] || '',
+            })
+          }
         }
       }
+      saveTables()
     }
-    saveTables()
   }
 }
 
