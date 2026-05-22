@@ -11,4 +11,5 @@ npm-debug.*
 web-build/
 .env
 *.zip
-rapport.tex
+images/
+temp_overleaf/

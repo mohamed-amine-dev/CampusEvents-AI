@@ -1,0 +1,507 @@
+\documentclass[a4paper,12pt]{report}
+
+% ---------- Packages ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{setspace}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{tocloft}
+\usepackage{array}
+
+% ---------- Hyperlinks ----------
+\hypersetup{
+    colorlinks=true,
+    linkcolor=teal,
+    urlcolor=teal,
+    citecolor=teal,
+}
+
+% ---------- Colors ----------
+\definecolor{tealprimary}{RGB}{13,148,136}
+\definecolor{tealdark}{RGB}{19,78,74}
+
+% ---------- Page Style ----------
+\onehalfspacing
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textit{CampusEvents AI}}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{}
+\renewcommand{\headrulewidth}{0.5pt}
+
+\fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyhead[L]{\textit{CampusEvents AI}}
+    \fancyhead[R]{\thepage}
+    \renewcommand{\headrulewidth}{0.5pt}
+}
+
+% ---------- Section Formatting ----------
+\titleformat{\chapter}[display]
+    {\Large\bfseries\color{tealdark}}
+    {\chaptername\ \thechapter}
+    {20pt}
+    {\Huge}
+
+\titleformat{\section}
+    {\Large\bfseries\color{tealprimary}}
+    {\thesection}
+    {1em}
+    {}
+
+\titleformat{\subsection}
+    {\large\bfseries\color{tealdark}}
+    {\thesubsection}
+    {1em}
+    {}
+
+% ---------- Table of Contents ----------
+\renewcommand{\cfttoctitlefont}{\Huge\bfseries\color{tealdark}}
+\renewcommand{\cftchapfont}{\bfseries\color{tealprimary}}
+\renewcommand{\cftsecfont}{\color{black}}
+
+% Graphics path
+\graphicspath{{images/}}
+
+% ---------- Document ----------
+\begin{document}
+
+% ============================================================
+% COVER PAGE
+% ============================================================
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+
+    {\Huge\bfseries\color{tealdark} Rapport de Projet}\\[1.5cm]
+
+    {\LARGE\bfseries\color{tealprimary} CampusEvents AI}\\[0.5cm]
+    {\Large Application Mobile de Gestion d'\'{E}v\'{e}nements\\ avec Assistant IA}\\[2.5cm]
+
+    \begin{minipage}{0.8\textwidth}
+        \large
+        \begin{minipage}[t]{0.45\textwidth}
+            \raggedright
+            \textbf{R\'{e}alis\'{e} par :}\\[0.3cm]
+            {\Large OUALLALI Mohamed Amine}
+        \end{minipage}
+        \hfill
+        \begin{minipage}[t]{0.45\textwidth}
+            \raggedleft
+            \textbf{Encadr\'{e} par :}\\[0.3cm]
+            {\Large Hassan ZILI}
+        \end{minipage}
+
+        \vspace{1.5cm}
+        \centering
+        \href{https://github.com/mohamed-amine-dev/CampusEvents-AI.git}{\Large\color{tealprimary}\underline{https://github.com/mohamed-amine-dev/CampusEvents-AI.git}}
+
+        \vspace{1.5cm}
+        \centering
+        \large
+        \today
+    \end{minipage}
+
+    \vfill
+\end{titlepage}
+
+% ============================================================
+% TABLE OF CONTENTS
+% ============================================================
+\tableofcontents
+\newpage
+
+% ============================================================
+% INTRODUCTION
+% ============================================================
+\chapter*{Introduction}
+\addcontentsline{toc}{chapter}{Introduction}
+
+CampusEvents AI est une application mobile cross-platform de gestion d'\'{e}v\'{e}nements universitaires, d\'{e}velopp\'{e}e dans le cadre d'un projet acad\'{e}mique. L'application a pour objectif de centraliser l'ensemble des \'{e}v\'{e}nements organis\'{e}s au sein d'un campus universitaire et de les rendre facilement accessibles aux \'{e}tudiants et au personnel administratif.
+
+La particularit\'{e} de cette application r\'{e}side dans l'int\'{e}gration d'un assistant intelligent bas\'{e} sur l'intelligence artificielle, capable de comprendre le langage naturel, de recommander des \'{e}v\'{e}nements pertinents et d'aider les utilisateurs dans leur planification hebdomadaire.
+
+Ce rapport pr\'{e}sente l'architecture technique compl\`{e}te de l'application, les technologies employ\'{e}es, la hi\'{e}rarchie des composants, les fonctionnalit\'{e}s impl\'{e}ment\'{e}es pour chaque r\^{o}le utilisateur ainsi que le fonctionnement d\'{e}taill\'{e} de l'assistant IA.
+
+\newpage
+
+% ============================================================
+% ARCHITECTURE TECHNIQUE
+% ============================================================
+\chapter{Architecture Technique}
+
+\section{Stack Technologique}
+
+CampusEvents AI repose sur un ensemble de technologies modernes soigneusement s\'{e}lectionn\'{e}es pour leur performance, leur maintenabilit\'{e} et leur \'{e}cosyst\`{e}me :
+
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{React Native (Expo SDK 56)} : Framework de d\'{e}veloppement mobile permettant de cr\'{e}er des applications natives pour iOS et Android \`{a} partir d'une seule codebase JavaScript/TypeScript. Expo simplifie le processus de build et fournit un ensemble d'outils int\'{e}gr\'{e}s.
+    \item \textbf{TypeScript} : Sur-ensemble typ\'{e} de JavaScript qui apporte une v\'{e}rification statique des types, am\'{e}liorant ainsi la robustesse du code et facilitant la maintenance.
+    \item \textbf{Expo Router} : Syst\`{e}me de navigation bas\'{e} sur le syst\`{e}me de fichiers, inspir\'{e} de Next.js. Il permet une organisation claire des \'{e}crans et une navigation d\'{e}clarative.
+    \item \textbf{SQLite} : Base de donn\'{e}es relationnelle embarqu\'{e}e, id\'{e}ale pour les applications mobiles n\'{e}cessitant un stockage local persistant sans d\'{e}pendance r\'{e}seau.
+    \item \textbf{Groq API} : Service d'inf\'{e}rence LLM haute performance utilis\'{e} pour alimenter l'assistant IA avec le mod\`{e}le Llama 3.3 70B Versatile.
+    \item \textbf{AsyncStorage} : Stockage cl\'{e}-valeur persistant pour les sessions utilisateur, les pr\'{e}f\'{e}rences de th\`{e}me et le cache des r\'{e}ponses LLM.
+\end{itemize}
+
+\section{Structure du Projet}
+
+L'application suit une architecture modulaire organis\'{e}e autour du routing bas\'{e} sur fichiers. La hi\'{e}rarchie du projet est la suivante :
+
+\begin{verbatim}
+app/
+  \_layout.tsx          -- Layout racine avec garde d'auth
+  (student)/            -- Groupe \'{e}tudiant (5 onglets)
+    _layout.tsx         -- Navigation par onglets
+    catalogue.tsx
+    favoris.tsx
+    assistant.tsx
+    inscriptions.tsx
+    profil.tsx
+  (admin)/              -- Groupe administrateur (pile)
+    _layout.tsx         -- Navigation par pile
+    index.tsx           -- Liste des \'{e}v\'{e}nements
+    create.tsx          -- Cr\'{e}ation d'\'{e}v\'{e}nement
+    edit.tsx            -- Modification d'\'{e}v\'{e}nement
+  login.tsx
+components/
+  ui/                   -- 9 composants r\'{e}utilisables
+    Button.tsx
+    Card.tsx
+    TextField.tsx
+    SearchBar.tsx
+    Chip.tsx
+    Badge.tsx
+    Header.tsx
+    Screen.tsx
+    EmptyState.tsx
+context/
+  AuthContext.tsx        -- Contexte d'authentification
+  ThemeContext.tsx       -- Contexte de th\`{e}me (clair/sombre)
+database/
+  db.ts                 -- S\'{e}lecteur automatique de plateforme
+  db.web.ts             -- Moteur SQL Web (AsyncStorage)
+  db.native.ts          -- Moteur SQL natif (expo-sqlite)
+services/
+  groq.ts               -- Int\'{e}gration API Groq
+constants/
+  colors.ts             -- Palette de couleurs
+  demo-data.ts          -- Donn\'{e}es de d\'{e}monstration
+types/
+  index.ts              -- D\'{e}finitions TypeScript
+\end{verbatim}
+
+\section{Couche de Donn\'{e}es}
+
+La base de donn\'{e}es relationnelle se compose de quatre tables interconnect\'{e}es :
+
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{events} : Stocke les informations compl\`{e}tes des \'{e}v\'{e}nements (identifiant unique, titre, description, cat\'{e}gorie, date et heure, lieu, organisateur, capacit\'{e} maximale, URL de l'image, date de cr\'{e}ation).
+    \item \textbf{registrations} : G\`{e}re les inscriptions avec une contrainte d'unicit\'{e} (utilisateur + \'{e}v\'{e}nement) et une date d'inscription.
+    \item \textbf{favorites} : Sauvegarde les favoris des utilisateurs avec la m\^{e}me contrainte d'unicit\'{e}.
+    \item \textbf{llm\_results} : Cache les r\'{e}ponses de l'assistant IA avec l'utilisateur, le type de requ\^{e}te, le texte d'entr\'{e}e et la r\'{e}ponse compl\`{e}te.
+\end{itemize}
+
+L'architecture de la couche donn\'{e}es est remarquable par son double moteur SQL : une impl\'{e}mentation web utilise un analyseur de requ\^{e}tes SQL bas\'{e} sur des expressions r\'{e}guli\`{e}res avec persistance AsyncStorage, tandis que l'impl\'{e}mentation native exploite l'API synchrone d'\texttt{expo-sqlite}. Le s\'{e}lecteur \texttt{db.ts} choisit automatiquement l'impl\'{e}mentation appropri\'{e}e selon la plateforme.
+
+\section{Syst\`{e}me de Design et Th\`{e}me}
+
+L'application impl\'{e}mente une architecture de th\`{e}me via React Context. Le \texttt{ThemeContext} fournit deux palettes de couleurs compl\`{e}tes (clair et sombre) qui sont appliqu\'{e}es globalement \`{a} tous les composants. Le th\`{e}me s\'{e}lectionn\'{e} est persist\'{e} dans AsyncStorage, garantissant la continuit\'{e} de l'exp\'{e}rience utilisateur entre les sessions.
+
+\newpage
+
+% ============================================================
+% FONCTIONNALITÉS
+% ============================================================
+\chapter{Fonctionnalit\'{e}s}
+
+\section{Authentification et Navigation}
+
+Le syst\`{e}me d'authentification est g\'{e}r\'{e} par un \texttt{AuthContext} qui maintient l'\'{e}tat de session globalement. La page de connexion propose un s\'{e}lecteur de r\^{o}le (Admin / \'{E}tudiant) avec pr\'{e}-remplissage automatique des identifiants de d\'{e}monstration. La session est persist\'{e}e dans AsyncStorage, \'{e}vitant une reconnexion \`{a} chaque ouverture.
+
+La navigation est assur\'{e}e par Expo Router avec deux groupes distincts :
+
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{Groupe \'{e}tudiant} \texttt{(student)} : Navigation par onglets avec 5 \'{e}crans (Catalogue, Favoris, Assistant IA, Inscriptions, Profil).
+    \item \textbf{Groupe administrateur} \texttt{(admin)} : Navigation par pile avec 3 \'{e}crans (Liste, Cr\'{e}ation, Modification).
+\end{itemize}
+
+Une garde d'authentification dans le layout racine redirige automatiquement les utilisateurs non connect\'{e}s vers la page de connexion.
+
+\section{Fonctionnalit\'{e}s \'{E}tudiant}
+
+\subsection{Catalogue et Recherche}
+Le catalogue affiche les \'{e}v\'{e}nements dans une grille \`{a} deux colonnes avec :
+\begin{itemize}[leftmargin=2em]
+    \item Recherche textuelle en temps r\'{e}el sur le titre et la description.
+    \item Filtres par cat\'{e}gorie (Workshop, Talk, Club, Exam, Other).
+    \item Affichage des cartes avec image hero, badge de date, jauge de capacit\'{e}, nom et localisation.
+    \item Bouton c{\oe}ur pour ajouter/retirer un favori instantan\'{e}ment.
+\end{itemize}
+
+\subsection{D\'{e}tail d'\'{E}v\'{e}nement}
+La page de d\'{e}tail pr\'{e}sente :
+\begin{itemize}[leftmargin=2em]
+    \item Section hero avec l'image grand format.
+    \item Informations cl\'{e}s (lieu, organisateur, cat\'{e}gorie).
+    \item Barre de progression de la capacit\'{e} avec compteur.
+    \item Description compl\`{e}te et tags.
+    \item Bouton principal d'inscription / d\'{e}sinscription.
+\end{itemize}
+
+\subsection{Favoris et Inscriptions}
+Deux \'{e}crans d\'{e}di\'{e}s listent les \'{e}v\'{e}nements favoris et les inscriptions confirm\'{e}es de l'utilisateur. L'inscription d\'{e}clenche une confirmation visuelle et une mise \`{a} jour en temps r\'{e}el du compteur de participants.
+
+\subsection{Profil et Personnalisation}
+L'utilisateur peut modifier son nom d'affichage et basculer entre les th\`{e}mes clair et sombre. Les param\`{e}tres sont persist\'{e}s et appliqu\'{e}s globalement.
+
+\section{Fonctionnalit\'{e}s Administrateur}
+
+Les administrateurs disposent d'un panneau de gestion complet :
+
+\begin{itemize}[leftmargin=2em]
+    \item \textbf{Liste des \'{e}v\'{e}nements} : Visualisation de tous les \'{e}v\'{e}nements avec indicateurs de capacit\'{e} et acc\`{e}s rapide aux actions de modification et suppression.
+    \item \textbf{Cr\'{e}ation} : Formulaire complet avec validation des champs requis, s\'{e}lecteur de cat\'{e}gorie et date, organisateur et capacit\'{e}.
+    \item \textbf{Modification} : Pr\'{e}-remplissage du formulaire avec les donn\'{e}es existantes pour mise \`{a} jour.
+    \item \textbf{Suppression} : Confirmation avant suppression avec suppression en cascade dans la base de donn\'{e}es.
+\end{itemize}
+
+\newpage
+
+% ============================================================
+% ASSISTANT IA
+% ============================================================
+\chapter{Assistant Intelligent}
+
+\section{Int\'{e}gration de l'API Groq}
+
+L'assistant IA utilise l'API Groq avec le mod\`{e}le \texttt{Llama 3.3 70B Versatile}. La cl\'{e} API est configur\'{e}e via une variable d'environnement Expo (\texttt{EXPO\_PUBLIC\_GROQ\_API\_KEY}), garantissant la s\'{e}curit\'{e} des acc\`{e}s tout en restant accessible c\^{o}t\'{e} client.
+
+\section{Modes de Fonctionnement}
+
+L'assistant propose quatre modes sp\'{e}cialis\'{e}s accessibles via une interface \`{a} onglets :
+
+\begin{enumerate}[leftmargin=2em]
+    \item \textbf{Recherche (Search)} : Interpr\`{e}te les requ\^{e}tes en langage naturel et retourne les identifiants des \'{e}v\'{e}nements correspondants sous forme de tableau JSON. Permet des requ\^{e}tes comme \guillemotleft~les \'{e}v\'{e}nements de la semaine prochaine~\guillemotright.
+    \item \textbf{Recommandations (Recommend)} : Analyse les favoris et inscriptions de l'utilisateur pour sugg\'{e}rer des \'{e}v\'{e}nements pertinents et personnalis\'{e}s.
+    \item \textbf{Planning (Plan)} : Aide l'utilisateur \`{a} organiser sa semaine en analysant les \'{e}v\'{e}nements \`{a} venir dans les 7 prochains jours avec d\'{e}tails horaires et lieux.
+    \item \textbf{Questions (QA)} : R\'{e}pond aux questions g\'{e}n\'{e}rales sur les \'{e}v\'{e}nements du campus en fran\c{c}ais, en utilisant une base de connaissances compl\`{e}te.
+\end{enumerate}
+
+\section{Ing\'{e}nierie des Prompts}
+
+Chaque mode utilise un prompt syst\`{e}me sp\'{e}cialis\'{e} avec un contexte riche contenant l'ensemble des \'{e}v\'{e}nements disponibles. La temp\'{e}rature est fix\'{e}e \`{a} 0.3 pour des r\'{e}ponses pr\'{e}cises et reproductibles, avec un maximum de 2000 tokens.
+
+\section{Cache et Optimisation}
+
+Pour r\'{e}duire les appels API et am\'{e}liorer les performances, les r\'{e}sultats sont mis en cache dans la table \texttt{llm\_results}. Une requ\^{e}te identique (m\^{e}me utilisateur, m\^{e}me mode, m\^{e}me texte) renvoie le r\'{e}sultat en cache sans solliciter l'API, permettant \'{e}galement un historique complet des interactions.
+
+\newpage
+
+% ===========================================================%
+% TABLEAU RÉCAPITULATIF
+% ===========================================================%
+\chapter*{R\'{e}capitulatif Technique}
+\addcontentsline{toc}{chapter}{R\'{e}capitulatif Technique}
+
+\begin{center}
+\begin{tabular}{|m{4cm}|m{10cm}|}
+\hline
+\rowcolor{tealprimary!20}
+\textbf{Module} & \textbf{D\'{e}tail} \\
+\hline
+Framework & React Native 0.76 + Expo SDK 56 \\
+\hline
+Langage & TypeScript 5.3 \\
+\hline
+Navigation & Expo Router (file-based routing) \\
+\hline
+Base de donn\'{e}es & SQLite (expo-sqlite natif + moteur SQL web) \\
+\hline
+IA & Groq API -- Llama 3.3 70B Versatile \\
+\hline
+Stockage & AsyncStorage (persistance session, th\`{e}me, cache) \\
+\hline
+\'{E}crans \'{e}tudiant & 5 (Catalogue, Favoris, Assistant, Inscriptions, Profil) \\
+\hline
+\'{E}crans admin & 3 (Liste, Cr\'{e}ation, Modification) \\
+\hline
+Composants UI & 9 composants r\'{e}utilisables \\
+\hline
+\'{E}v\'{e}nements demo & 12 \'{e}v\'{e}nements dans 5 cat\'{e}gories \\
+\hline
+Comptes demo & 2 (admin@campus.ma / etudiant@campus.ma) \\
+\hline
+Th\`{e}mes & Clair et sombre avec persistance \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ============================================================
+% CONCLUSION
+% ============================================================
+\chapter*{Conclusion}
+\addcontentsline{toc}{chapter}{Conclusion}
+
+CampusEvents AI est une application mobile compl\`{e}te qui d\'{e}montre l'int\'{e}gration r\'{e}ussie de technologies modernes de d\'{e}veloppement mobile avec l'intelligence artificielle. L'application offre une exp\'{e}rience utilisateur fluide, une interface adaptative et des fonctionnalit\'{e}s avanc\'{e}es.
+
+Les principaux acquis techniques du projet sont :
+\begin{itemize}[leftmargin=2em]
+    \item La ma\^{i}trise du framework React Native et de l'\'{e}cosyst\`{e}me Expo.
+    \item L'impl\'{e}mentation d'une couche de donn\'{e}es multi-plateforme (web et natif).
+    \item L'int\'{e}gration d'un LLM via API REST avec gestion de cache intelligent.
+    \item La conception d'une architecture modulaire et maintenable.
+    \item La mise en place d'un syst\`{e}me de design coh\'{e}rent avec support du mode sombre.
+\end{itemize}
+
+Perspectives d'\'{e}volution :
+\begin{itemize}[leftmargin=2em]
+    \item Synchronisation avec un backend distant pour le partage multi-appareils.
+    \item Notifications push pour les rappels d'\'{e}v\'{e}nements.
+    \item Syst\`{e}me de feedback et notation des \'{e}v\'{e}nements.
+    \item Support multilingue (anglais, arabe).
+    \item Am\'{e}lioration des prompts avec contexte conversationnel.
+\end{itemize}
+
+\vspace{1cm}
+\centering
+\large
+\href{https://github.com/mohamed-amine-dev/CampusEvents-AI.git}{\color{tealprimary}\underline{https://github.com/mohamed-amine-dev/CampusEvents-AI.git}}
+
+\newpage
+
+% ============================================================
+% CAPTURES D'ÉCRAN
+% ============================================================
+\chapter*{Annexe : Captures d'\'{E}cran}
+\addcontentsline{toc}{chapter}{Annexe : Captures d'\'{E}cran}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img1.jpeg}
+    \caption{\'{E}cran de connexion avec s\'{e}lecteur de r\^{o}le (Admin/\'{E}tudiant) et pr\'{e}-remplissage automatique}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img2.jpeg}
+    \caption{Catalogue des \'{e}v\'{e}nements en grille deux colonnes avec cartes, jauges de capacit\'{e} et boutons favoris}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img3.jpeg}
+    \caption{Filtres par cat\'{e}gorie et barre de recherche textuelle en temps r\'{e}el}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img4.jpeg}
+    \caption{Page de d\'{e}tail d'un \'{e}v\'{e}nement avec hero image et informations compl\`{e}tes}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img5.jpeg}
+    \caption{Inscription \`{a} un \'{e}v\'{e}nement avec barre de progression de la capacit\'{e}}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img6.jpeg}
+    \caption{\'{E}cran des favoris listant les \'{e}v\'{e}nements sauvegard\'{e}s par l'utilisateur}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img7.jpeg}
+    \caption{\'{E}cran des inscriptions confirm\'{e}es avec option d'annulation}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img8.jpeg}
+    \caption{Assistant IA en mode Recommandations avec suggestions personnalis\'{e}es}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img9.jpeg}
+    \caption{Interface de gestion des \'{e}v\'{e}nements (vue administrateur)}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img10.jpeg}
+    \caption{Formulaire de cr\'{e}ation d'\'{e}v\'{e}nement avec validation des champs}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{img11.jpeg}
+    \caption{Profil utilisateur avec \'{e}dition du nom et s\'{e}lecteur de th\`{e}me (clair/sombre)}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{profile.jpeg}
+    \caption{Page de profil avec informations personnelles et pr\'{e}f\'{e}rences}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{admin1.jpeg}
+    \caption{Interface administrateur -- Liste compl\`{e}te des \'{e}v\'{e}nements avec actions}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{admin2.jpeg}
+    \caption{Interface administrateur -- Cr\'{e}ation d'un nouvel \'{e}v\'{e}nement}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{admin3.jpeg}
+    \caption{Interface administrateur -- Modification d'un \'{e}v\'{e}nement existant}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{admin4.jpeg}
+    \caption{Interface administrateur -- D\'{e}tails et options de gestion}
+\end{figure}
+\newpage
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{admin5.jpeg}
+    \caption{Interface administrateur -- Confirmation de suppression d'\'{e}v\'{e}nement}
+\end{figure}
+
+\end{document}
