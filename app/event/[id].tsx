@@ -1,379 +1,234 @@
 import { useState, useEffect } from 'react'
-import { View, Text, ScrollView, StyleSheet, Alert, Image, Dimensions, TouchableOpacity } from 'react-native'
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
-import { Card } from '../../components/ui/Card'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
-import { ErrorState } from '../../components/ui/ErrorState'
-import { DarkModeToggle } from '../../components/DarkModeToggle'
-import { useTheme } from '../../context/ThemeContext'
+import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native'
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../context/AuthContext'
-import { getEventById } from '../../database/events'
-import { registerForEvent, cancelRegistration, getRegistration } from '../../database/registrations'
-import { addFavorite, removeFavorite, isFavorite } from '../../database/favorites'
-import { Event } from '../../types'
+import { useTheme } from '../../context/ThemeContext'
+import { getEventById, Event } from '../../database/events'
+import { isFavorite, addFavorite, removeFavorite } from '../../database/favorites'
+import { registerForEvent, cancelRegistration, getRegistrationByEventAndUser } from '../../database/registrations'
+import { generateId } from '../../utils/uuid'
+import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate, formatDateLong, getCategoryStyle } from '../../constants/theme'
+import { Badge, Button } from '../../components/ui'
 
-const { width } = Dimensions.get('window')
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Talk: '#3B82F6',
-  Workshop: '#10B981',
-  Club: '#F59E0B',
-  Exam: '#EF4444',
-  Other: '#8B5CF6',
-}
-
-export default function EventDetail() {
-  const { theme } = useTheme()
-  const { user } = useAuth()
+export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
+  const { user } = useAuth()
+  const { theme } = useTheme()
   const router = useRouter()
-  const [event, setEvent] = useState<Event | undefined>(getEventById(id))
-  const [registered, setRegistered] = useState(false)
-  const [fav, setFav] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [imgError, setImgError] = useState(false)
+  const navigation = useNavigation()
+  const insets = useSafeAreaInsets()
+
+  const [event, setEvent] = useState<Event | null>(null)
+  const [isFav, setIsFav] = useState(false)
+  const [isRegistered, setIsRegistered] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (event && user) {
-      setRegistered(!!getRegistration(event.id, user.email))
-      setFav(isFavorite(event.id, user.email))
+    if (!id) return
+    const evt = getEventById(id)
+    setEvent(evt)
+    if (user && evt) {
+      setIsFav(isFavorite(evt.id, user.email))
+      setIsRegistered(!!getRegistrationByEventAndUser(evt.id, user.email))
     }
-  }, [event, user])
-
-  if (!event) {
-    return <ErrorState message="Événement introuvable" onRetry={() => router.back()} />
-  }
-
-  const startDate = new Date(event.startDateTime)
-  const endDate = event.endDateTime ? new Date(event.endDateTime) : null
-  const isPast = startDate < new Date()
-  const isFull = event.capacity ? event.registeredCount >= event.capacity : false
-
-  const handleRegister = async () => {
-    if (!user) return
-    setLoading(true)
-    if (registered) {
-      cancelRegistration(event.id, user.email)
-      setRegistered(false)
-    } else {
-      const result = registerForEvent(event.id, user.email)
-      if (!result.success) {
-        Alert.alert('Erreur', result.error)
-        setLoading(false)
-        return
-      }
-      setRegistered(true)
-    }
-    setEvent(getEventById(event.id))
     setLoading(false)
-  }
+  }, [id, user])
 
-  const toggleFav = () => {
-    if (!user) return
-    if (fav) {
+  function toggleFavorite() {
+    if (!event || !user) return
+    if (isFav) {
       removeFavorite(event.id, user.email)
-      setFav(false)
+      setIsFav(false)
     } else {
       addFavorite(event.id, user.email)
-      setFav(true)
+      setIsFav(true)
     }
   }
 
-  const dateStr = startDate.toLocaleDateString('fr-FR', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  })
-  const startStr = startDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  const endStr = endDate?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  function handleRegister() {
+    if (!event || !user) return
+    if (isRegistered) {
+      cancelRegistration(event.id, user.email)
+      setIsRegistered(false)
+    } else {
+      if (event.capacity && event.registeredCount >= event.capacity) {
+        Alert.alert('Complet', 'Cet événement a atteint sa capacité maximale.')
+        return
+      }
+      registerForEvent(generateId(), event.id, user.email)
+      setIsRegistered(true)
+      setEvent((prev) => prev ? { ...prev, registeredCount: prev.registeredCount + 1 } : prev)
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    )
+  }
+
+  if (!event) {
+    return (
+      <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+        <Text style={{ color: Colors.textSecondary }}>Événement non trouvé</Text>
+        <Button title="Retour" onPress={() => router.back()} style={{ marginTop: Spacing.lg }} />
+      </View>
+    )
+  }
+
+  const fd = formatDate(event.startDateTime)
+  const catStyle = getCategoryStyle(event.category)
+  const capacityPercent = event.capacity ? Math.min(event.registeredCount / event.capacity * 100, 100) : 0
 
   return (
-    <>
-      <Stack.Screen options={{ headerTitle: '', headerRight: () => <DarkModeToggle /> }} />
-      <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        {event.imageUrl && !imgError ? (
-          <View style={styles.imageHero}>
-            <Image
-              source={{ uri: event.imageUrl }}
-              style={styles.heroImage}
-              onError={() => setImgError(true)}
-            />
-            <View style={[styles.heroOverlay, { backgroundColor: theme.dark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)' }]}>
-              <View style={[styles.heroDateBadge, { backgroundColor: theme.colors.primaryLight }]}>
-                <Text style={[styles.heroDay, { color: theme.colors.primary }]}>{startDate.getDate()}</Text>
-                <Text style={[styles.heroMonth, { color: theme.colors.primary }]}>
-                  {startDate.toLocaleDateString('fr-FR', { month: 'long' })}
-                </Text>
-              </View>
-              {user?.role === 'student' && (
-                <TouchableOpacity onPress={toggleFav} style={styles.heroFav} hitSlop={12}>
-                  <Text style={{ fontSize: 28 }}>{fav ? '❤️' : '🤍'}</Text>
-                </TouchableOpacity>
-              )}
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.hero}>
+        {event.imageUrl ? (
+          <Image source={{ uri: event.imageUrl }} style={styles.heroImage} />
+        ) : (
+          <View style={[styles.heroPlaceholder, { backgroundColor: catStyle.bg }]}>
+            <Ionicons name="calendar" size={48} color={catStyle.text} />
+          </View>
+        )}
+        <View style={styles.heroOverlay} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.favHeroBtn} onPress={toggleFavorite}>
+          <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={24} color={isFav ? Colors.favorite : Colors.textWhite} />
+        </TouchableOpacity>
+        <View style={styles.heroDateBadge}>
+          <Text style={styles.heroDateDay}>{fd.day}</Text>
+          <Text style={styles.heroDateMonth}>{fd.month}</Text>
+        </View>
+      </View>
+
+      <View style={styles.content}>
+        <Badge label={event.category} variant="category" style={{ marginBottom: Spacing.sm }} />
+        <Text style={styles.title}>{event.title}</Text>
+        <Text style={styles.dateTime}>{formatDateLong(event.startDateTime)} à {fd.time}</Text>
+        {event.endDateTime && (
+          <Text style={styles.dateTime}>
+            Jusqu'au {formatDateLong(event.endDateTime)}
+          </Text>
+        )}
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={18} color={Colors.primary} />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Lieu</Text>
+              <Text style={styles.infoValue}>{event.locationName}</Text>
+              {event.locationAddress && <Text style={styles.infoSub}>{event.locationAddress}</Text>}
             </View>
           </View>
-        ) : (
-          <View style={[styles.heroFallback, { backgroundColor: theme.colors.primaryLight }]}>
-            <View style={[styles.heroDateBadge, { backgroundColor: theme.colors.surface }]}>
-              <Text style={[styles.heroDay, { color: theme.colors.primary }]}>{startDate.getDate()}</Text>
-              <Text style={[styles.heroMonth, { color: theme.colors.primary }]}>
-                {startDate.toLocaleDateString('fr-FR', { month: 'long' })}
-              </Text>
+          <View style={styles.infoDivider} />
+          <View style={styles.infoRow}>
+            <Ionicons name="person-outline" size={18} color={Colors.primary} />
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Organisateur</Text>
+              <Text style={styles.infoValue}>{event.organizerName}</Text>
             </View>
+          </View>
+          {event.capacity && (
+            <>
+              <View style={styles.infoDivider} />
+              <View style={styles.infoRow}>
+                <Ionicons name="people-outline" size={18} color={Colors.primary} />
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Capacité</Text>
+                  <View style={styles.capacityRow}>
+                    <View style={styles.capacityBar}>
+                      <View style={[styles.capacityFill, { width: `${capacityPercent}%`, backgroundColor: capacityPercent >= 100 ? Colors.error : Colors.primary }]} />
+                    </View>
+                    <Text style={styles.capacityText}>
+                      {event.registeredCount}/{event.capacity}
+                      {capacityPercent >= 100 ? ' (Complet)' : ''}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </>
+          )}
+        </View>
+
+        <View style={styles.descriptionSection}>
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.description}>{event.description}</Text>
+        </View>
+
+        {event.tags && event.tags.length > 0 && (
+          <View style={styles.tagsSection}>
+            {event.tags.map((tag) => (
+              <View key={tag} style={styles.tag}>
+                <Text style={styles.tagText}>#{tag}</Text>
+              </View>
+            ))}
           </View>
         )}
 
-        <View style={styles.content}>
-          <View style={styles.titleSection}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>{event.title}</Text>
-            <View style={styles.metaRow}>
-              <Badge label={event.category} color={CATEGORY_COLORS[event.category]} />
-              {isPast && <Badge label="Passé" color={theme.colors.textSecondary} />}
-              {isFull && !isPast && <Badge label="Complet" color={theme.colors.error} />}
-            </View>
-          </View>
-
-          <Card style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>📅</Text>
-              <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Date</Text>
-                <Text style={[styles.infoValue, { color: theme.colors.text }]}>{dateStr}</Text>
-              </View>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>🕒</Text>
-              <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Horaire</Text>
-                <Text style={[styles.infoValue, { color: theme.colors.text }]}>
-                  {startStr}{endStr ? ` - ${endStr}` : ''}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>📍</Text>
-              <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Lieu</Text>
-                <Text style={[styles.infoValue, { color: theme.colors.text }]}>{event.locationName}</Text>
-                {event.locationAddress && (
-                  <Text style={[styles.infoSub, { color: theme.colors.textSecondary }]}>{event.locationAddress}</Text>
-                )}
-              </View>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>👤</Text>
-              <View style={styles.infoContent}>
-                <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Organisateur</Text>
-                <Text style={[styles.infoValue, { color: theme.colors.text }]}>{event.organizerName}</Text>
-              </View>
-            </View>
-            {event.capacity && (
-              <>
-                <View style={styles.divider} />
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoIcon}>👥</Text>
-                  <View style={styles.infoContent}>
-                    <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>Capacité</Text>
-                    <Text style={[styles.infoValue, { color: theme.colors.text }]}>
-                      {event.registeredCount}/{event.capacity} inscrits
-                    </Text>
-                    {event.capacity && (
-                      <View style={styles.capacityMiniBar}>
-                        <View style={[styles.capacityMiniBg, { backgroundColor: theme.colors.border }]}>
-                          <View
-                            style={[
-                              styles.capacityMiniFill,
-                              {
-                                backgroundColor: isFull ? theme.colors.error : theme.colors.success,
-                                width: `${Math.min(100, (event.registeredCount / event.capacity) * 100)}%`,
-                              },
-                            ]}
-                          />
-                        </View>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </>
-            )}
-          </Card>
-
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Description</Text>
-          <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
-            {event.description}
-          </Text>
-
-          {event.tags && event.tags.length > 0 && (
-            <View style={styles.tagsSection}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Tags</Text>
-              <View style={styles.tagsRow}>
-                {event.tags.map((tag: string) => (
-                  <Badge key={tag} label={tag} />
-                ))}
-              </View>
-            </View>
-          )}
-
-          {user?.role === 'student' && !isPast && (
-            <Button
-              title={registered ? 'Annuler l\'inscription' : isFull ? 'Complet' : 'S\'inscrire'}
-              onPress={handleRegister}
-              disabled={isFull && !registered}
-              loading={loading}
-              variant={registered ? 'secondary' : 'primary'}
-              size="lg"
-              style={styles.registerBtn}
-            />
-          )}
-        </View>
-      </ScrollView>
-    </>
+        <Button
+          title={isRegistered ? 'Annuler mon inscription' : "S'inscrire"}
+          onPress={handleRegister}
+          variant={isRegistered ? 'secondary' : 'primary'}
+          size="lg"
+          style={{ marginTop: Spacing.xl }}
+        />
+      </View>
+    </ScrollView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  imageHero: {
-    position: 'relative',
-  },
-  heroImage: {
-    width,
-    height: 280,
-  },
-  heroOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
+  hero: { height: 280, position: 'relative' },
+  heroImage: { width: '100%', height: 280 },
+  heroPlaceholder: { width: '100%', height: 280, justifyContent: 'center', alignItems: 'center' },
+  heroOverlay: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.3)' },
+  backBtn: { position: 'absolute', top: 60, left: Spacing.lg, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  favHeroBtn: { position: 'absolute', top: 60, right: Spacing.lg, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   heroDateBadge: {
-    width: 90,
-    height: 100,
-    borderRadius: 20,
-    justifyContent: 'center',
+    position: 'absolute', bottom: Spacing.xl, left: Spacing.xl,
+    backgroundColor: Colors.overlay,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
     alignItems: 'center',
   },
-  heroDay: {
-    fontSize: 32,
-    fontWeight: '800',
-  },
-  heroMonth: {
-    fontSize: 13,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  heroFav: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  heroFallback: {
-    height: 220,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    paddingHorizontal: 16,
-    paddingBottom: 40,
-  },
-  titleSection: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '800',
-    marginBottom: 8,
-    lineHeight: 32,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
+  heroDateDay: { fontSize: 28, fontWeight: FontWeight.bold, color: Colors.textWhite, lineHeight: 30 },
+  heroDateMonth: { fontSize: FontSize.subhead, fontWeight: FontWeight.semibold, color: Colors.textWhite, textTransform: 'uppercase' },
+  content: { padding: Spacing.xl, paddingBottom: 60 },
+  title: { fontSize: FontSize.heading, fontWeight: FontWeight.bold, color: Colors.textPrimary, marginBottom: Spacing.sm },
+  dateTime: { fontSize: FontSize.body, color: Colors.textSecondary, marginBottom: 2 },
   infoCard: {
-    marginBottom: 20,
-    padding: 0,
+    backgroundColor: Colors.surface, borderRadius: BorderRadius.xl,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: Spacing.xl, marginTop: Spacing.xl,
+    ...Shadow.level1,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
+  infoRow: { flexDirection: 'row', gap: Spacing.md, alignItems: 'flex-start' },
+  infoContent: { flex: 1 },
+  infoLabel: { fontSize: FontSize.caption, fontWeight: FontWeight.semibold, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+  infoValue: { fontSize: FontSize.body, fontWeight: FontWeight.medium, color: Colors.textPrimary, marginTop: 2 },
+  infoSub: { fontSize: FontSize.caption, color: Colors.textSecondary, marginTop: 2 },
+  infoDivider: { height: 1, backgroundColor: Colors.borderLight, marginVertical: Spacing.md },
+  capacityRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginTop: Spacing.sm },
+  capacityBar: { flex: 1, height: 8, backgroundColor: Colors.borderLight, borderRadius: 4, overflow: 'hidden' },
+  capacityFill: { height: '100%', borderRadius: 4 },
+  capacityText: { fontSize: FontSize.label, fontWeight: FontWeight.semibold, color: Colors.textSecondary, width: 80, textAlign: 'right' },
+  descriptionSection: { marginTop: Spacing.xl },
+  sectionTitle: { fontSize: FontSize.subhead, fontWeight: FontWeight.bold, color: Colors.textPrimary, marginBottom: Spacing.sm },
+  description: { fontSize: FontSize.body, color: Colors.textSecondary, lineHeight: 22 },
+  tagsSection: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.lg },
+  tag: {
+    backgroundColor: Colors.primaryBg,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1, borderColor: Colors.primaryBorder,
   },
-  infoIcon: {
-    fontSize: 20,
-    marginRight: 14,
-    width: 28,
-    textAlign: 'center',
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  infoSub: {
-    fontSize: 13,
-    marginTop: 1,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
-    marginHorizontal: 14,
-    opacity: 0.5,
-  },
-  capacityMiniBar: {
-    marginTop: 6,
-  },
-  capacityMiniBg: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  capacityMiniFill: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  description: {
-    fontSize: 15,
-    lineHeight: 24,
-    marginBottom: 16,
-  },
-  tagsSection: {
-    marginBottom: 24,
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  registerBtn: {
-    width: '100%',
-    marginTop: 8,
-  },
+  tagText: { fontSize: FontSize.caption, fontWeight: FontWeight.medium, color: Colors.primary },
 })

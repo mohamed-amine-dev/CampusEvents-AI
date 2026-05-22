@@ -1,63 +1,37 @@
-import { v4 as uuidv4 } from 'uuid'
-import { Registration } from '../types'
-import db from './init'
-import { getEventById } from './events'
+import { queryAll, queryFirst, executeSql } from './db'
+import { getEventById, incrementRegisteredCount, decrementRegisteredCount } from './events'
 
-function rowToRegistration(row: any): Registration {
-  return {
-    id: row.id,
-    eventId: row.eventId,
-    userId: row.userId,
-    createdAt: row.createdAt,
-    status: row.status,
-  }
+export interface Registration {
+  id: string
+  eventId: string
+  userId: string
+  createdAt: string
+  status: string
 }
 
 export function getRegistrationsByUser(userId: string): Registration[] {
-  const rows = db.queryAll(
-    'SELECT * FROM registrations WHERE userId = ? ORDER BY createdAt DESC',
-    [userId]
-  )
-  return rows.map(rowToRegistration)
+  return queryAll('SELECT * FROM registrations WHERE userId = ? AND status = ? ORDER BY createdAt DESC', [userId, 'confirmed']) as any[]
 }
 
-export function getRegistration(eventId: string, userId: string): Registration | undefined {
-  const row = db.queryFirst(
-    'SELECT * FROM registrations WHERE eventId = ? AND userId = ?',
-    [eventId, userId]
-  ) as any
-  return row ? rowToRegistration(row) : undefined
+export function getRegistrationByEventAndUser(eventId: string, userId: string): Registration | null {
+  return queryFirst('SELECT * FROM registrations WHERE eventId = ? AND userId = ? AND status = ?', [eventId, userId, 'confirmed']) as any
 }
 
-export function registerForEvent(eventId: string, userId: string): { success: boolean; error?: string } {
-  const event = getEventById(eventId)
-  if (!event) return { success: false, error: 'Événement introuvable' }
-
-  const startDate = new Date(event.startDateTime)
-  if (startDate < new Date()) return { success: false, error: 'Cet événement est déjà passé' }
-
-  if (event.capacity && event.registeredCount >= event.capacity) {
-    return { success: false, error: 'Événement complet' }
-  }
-
-  const existing = getRegistration(eventId, userId)
-  if (existing) return { success: false, error: 'Vous êtes déjà inscrit' }
-
-  const id = uuidv4()
-  db.executeSql(
-    'INSERT INTO registrations (id, eventId, userId, createdAt, status) VALUES (?, ?, ?, ?, ?)',
-    [id, eventId, userId, new Date().toISOString(), 'confirmed']
-  )
-
-  db.executeSql('UPDATE events SET registeredCount = registeredCount + 1 WHERE id = ?', [eventId])
-
-  return { success: true }
+export function registerForEvent(id: string, eventId: string, userId: string): Registration {
+  const createdAt = new Date().toISOString()
+  executeSql('INSERT INTO registrations (id, eventId, userId, createdAt, status) VALUES (?, ?, ?, ?, ?)', [id, eventId, userId, createdAt, 'confirmed'])
+  incrementRegisteredCount(eventId)
+  return { id, eventId, userId, createdAt, status: 'confirmed' }
 }
 
 export function cancelRegistration(eventId: string, userId: string): void {
-  db.executeSql(
-    'DELETE FROM registrations WHERE eventId = ? AND userId = ?',
-    [eventId, userId]
-  )
-  db.executeSql('UPDATE events SET registeredCount = MAX(0, registeredCount - 1) WHERE id = ?', [eventId])
+  executeSql('UPDATE registrations SET status = ? WHERE eventId = ? AND userId = ? AND status = ?', ['cancelled', eventId, userId, 'confirmed'])
+  decrementRegisteredCount(eventId)
+}
+
+export function getEventWithRegistrationStatus(eventId: string, userId: string) {
+  const event = getEventById(eventId)
+  const registration = getRegistrationByEventAndUser(eventId, userId)
+  const isFav = require('./favorites').isFavorite(eventId, userId)
+  return { event, isRegistered: !!registration, isFavorite: isFav }
 }

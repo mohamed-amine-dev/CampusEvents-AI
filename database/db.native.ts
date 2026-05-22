@@ -1,26 +1,42 @@
 import * as SQLite from 'expo-sqlite'
 
-const db = SQLite.openDatabaseSync('campusevents.db')
+let db: SQLite.SQLiteDatabase | null = null
+
+export function getDb(): SQLite.SQLiteDatabase {
+  if (!db) {
+    db = SQLite.openDatabaseSync('campusevents.db')
+  }
+  return db
+}
 
 export function executeSql(sql: string, params?: any[]): void {
-  db.runSync(sql, ...(params || []))
+  if (params && params.length > 0) {
+    getDb().runSync(sql, params as any)
+  } else {
+    getDb().runSync(sql)
+  }
 }
 
 export function queryAll(sql: string, params?: any[]): any[] {
-  return db.getAllSync(sql, params || []) as any[]
+  if (params && params.length > 0) {
+    return getDb().getAllSync(sql, params as any)
+  }
+  return getDb().getAllSync(sql)
 }
 
 export function queryFirst(sql: string, params?: any[]): any | null {
-  return (db.getFirstSync(sql, params || []) as any) || null
+  if (params && params.length > 0) {
+    return getDb().getFirstSync(sql, params as any)
+  }
+  return getDb().getFirstSync(sql)
 }
 
 export function execBatch(sql: string): void {
-  db.execSync(sql)
+  getDb().execSync(sql)
 }
 
 export function prepareInsert(sql: string): (...args: any[]) => void {
-  const stmt = db.prepareSync(sql)
   return (...args: any[]) => {
-    stmt.executeSync(...args)
+    getDb().runSync(sql, args as any)
   }
 }

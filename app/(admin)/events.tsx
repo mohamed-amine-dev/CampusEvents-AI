@@ -4,77 +4,73 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../context/AuthContext'
-import { getEventById, Event } from '../../database/events'
-import { getRegistrationsByUser, cancelRegistration } from '../../database/registrations'
-import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate } from '../../constants/theme'
-import { Badge, EmptyState, Button } from '../../components/ui'
+import { getAllEvents, deleteEvent, Event } from '../../database/events'
+import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate, getCategoryStyle } from '../../constants/theme'
+import { Badge, Button, EmptyState } from '../../components/ui'
 
-export default function RegistrationsScreen() {
+export default function AdminEventsScreen() {
   const { user } = useAuth()
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const [registrations, setRegistrations] = useState<(Event & { registrationId: string })[]>([])
+  const [events, setEvents] = useState<Event[]>([])
   const [refreshing, setRefreshing] = useState(false)
 
-  function loadRegistrations() {
-    if (!user) return
-    const regs = getRegistrationsByUser(user.email)
-    const events = regs.map((r) => {
-      const e = getEventById(r.eventId)
-      return e ? { ...e, registrationId: r.id } : null
-    }).filter(Boolean) as (Event & { registrationId: string })[]
-    setRegistrations(events)
+  function loadEvents() {
+    setEvents(getAllEvents())
   }
 
-  useFocusEffect(useCallback(() => { loadRegistrations() }, [user]))
+  useFocusEffect(useCallback(() => { loadEvents() }, []))
 
   function onRefresh() {
     setRefreshing(true)
-    loadRegistrations()
+    loadEvents()
     setRefreshing(false)
   }
 
-  function handleCancel(eventId: string, title: string) {
-    if (!user) return
+  function handleDelete(id: string, title: string) {
     Alert.alert(
-      'Annuler l\'inscription',
-      `Es-tu sûr de vouloir annuler ton inscription à "${title}" ?`,
+      'Supprimer',
+      `Supprimer "${title}" ? Cette action est irréversible.`,
       [
-        { text: 'Non', style: 'cancel' },
+        { text: 'Annuler', style: 'cancel' },
         {
-          text: 'Oui, annuler',
+          text: 'Supprimer',
           style: 'destructive',
           onPress: () => {
-            cancelRegistration(eventId, user.email)
-            setRegistrations((prev) => prev.filter((e) => e.id !== eventId))
+            deleteEvent(id)
+            loadEvents()
           },
         },
       ]
     )
   }
 
-  function renderEvent({ item }: { item: Event & { registrationId: string } }) {
+  function renderEvent({ item }: { item: Event }) {
     const fd = formatDate(item.startDateTime)
+    const catStyle = getCategoryStyle(item.category)
+
     return (
-      <TouchableOpacity style={styles.card} onPress={() => router.push(`/event/${item.id}`)} activeOpacity={0.95}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => router.push({ pathname: '/(admin)/edit/[id]', params: { id: item.id } })}
+        activeOpacity={0.95}
+      >
         {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />}
         <View style={styles.cardBody}>
           <Badge label={item.category} variant="category" />
           <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
           <View style={styles.cardMeta}>
             <Ionicons name="calendar-outline" size={14} color={Colors.textMuted} />
-            <Text style={styles.metaText}>{fd.day} {fd.month} à {fd.time}</Text>
+            <Text style={styles.metaText}>{fd.day} {fd.month}</Text>
           </View>
           <View style={styles.cardMeta}>
-            <Ionicons name="location-outline" size={14} color={Colors.textMuted} />
-            <Text style={styles.metaText}>{item.locationName}</Text>
+            <Ionicons name="people-outline" size={14} color={Colors.textMuted} />
+            <Text style={styles.metaText}>{item.registeredCount}/{item.capacity || '∞'} inscrits</Text>
           </View>
         </View>
-        <View style={styles.cardActions}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancel(item.id, item.title)}>
-            <Ionicons name="close-circle" size={22} color={Colors.error} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item.id, item.title)}>
+          <Ionicons name="trash-outline" size={20} color={Colors.error} />
+        </TouchableOpacity>
       </TouchableOpacity>
     )
   }
@@ -82,12 +78,17 @@ export default function RegistrationsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Mes Inscriptions</Text>
-        <Text style={styles.count}>{registrations.length} inscription{registrations.length !== 1 ? 's' : ''}</Text>
+        <View>
+          <Text style={styles.title}>Événements</Text>
+          <Text style={styles.count}>{events.length} au total</Text>
+        </View>
+        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/(admin)/create')}>
+          <Ionicons name="add" size={24} color={Colors.textWhite} />
+        </TouchableOpacity>
       </View>
       <FlatList
-        data={registrations}
-        keyExtractor={(item) => item.registrationId}
+        data={events}
+        keyExtractor={(item) => item.id}
         renderItem={renderEvent}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -95,8 +96,9 @@ export default function RegistrationsScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="calendar-outline"
-            title="Aucune inscription"
-            subtitle="Inscris-toi à des événements depuis le catalogue"
+            title="Aucun événement"
+            subtitle="Crée ton premier événement"
+            action={<Button title="Créer un événement" onPress={() => router.push('/(admin)/create')} />}
           />
         }
       />
@@ -108,14 +110,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: Spacing.xl, paddingVertical: Spacing.lg },
   title: { fontSize: FontSize.heading, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  count: { fontSize: FontSize.label, color: Colors.textSecondary, fontWeight: FontWeight.medium },
+  count: { fontSize: FontSize.label, color: Colors.textSecondary, fontWeight: FontWeight.medium, marginTop: 2 },
+  addBtn: {
+    width: 48, height: 48, borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primary, justifyContent: 'center', alignItems: 'center',
+    ...Shadow.level2,
+  },
   listContent: { padding: Spacing.xl, paddingBottom: 120, gap: Spacing.md },
   card: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 1, borderColor: Colors.border,
     overflow: 'hidden',
     ...Shadow.level1,
   },
@@ -124,6 +130,5 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: FontSize.body, fontWeight: FontWeight.semibold, color: Colors.textPrimary },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { fontSize: FontSize.caption, color: Colors.textMuted },
-  cardActions: { justifyContent: 'center', paddingHorizontal: Spacing.md },
-  cancelBtn: { padding: Spacing.sm },
+  deleteBtn: { justifyContent: 'center', paddingHorizontal: Spacing.md },
 })

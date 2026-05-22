@@ -60,32 +60,31 @@ export interface EventFormData {
   tags?: string[]
 }
 
+export interface ThemeColors {
+  primary: string
+  primaryLight: string
+  primaryDark: string
+  primaryBg: string
+  primaryBorder: string
+  surface: string
+  background: string
+  textPrimary: string
+  textSecondary: string
+  textMuted: string
+  textWhite: string
+  border: string
+  borderLight: string
+  success: string
+  successBg: string
+  error: string
+  errorBg: string
+  warning: string
+  warningBg: string
+  overlay: string
+  shimmer: string
+}
+
 export interface Theme {
-  colors: {
-    primary: string
-    primaryLight: string
-    primaryDark: string
-    secondary: string
-    success: string
-    error: string
-    warning: string
-    background: string
-    surface: string
-    surfaceElevated: string
-    text: string
-    textSecondary: string
-    textInverse: string
-    border: string
-    borderLight: string
-    cardShadow: string
-    overlay: string
-    tabBarBackground: string
-    tabBarBorder: string
-    statusBar: 'light' | 'dark'
-    chipBackground: string
-    chipText: string
-    inputBackground: string
-    skeleton: string
-  }
+  colors: ThemeColors
   dark: boolean
 }

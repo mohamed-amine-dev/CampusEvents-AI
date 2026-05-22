@@ -1,40 +1,19 @@
-import { Favorite } from '../types'
-import db from './init'
+import { queryAll, queryFirst, executeSql } from './db'
 
-function rowToFavorite(row: any): Favorite {
-  return {
-    eventId: row.eventId,
-    userId: row.userId,
-    createdAt: row.createdAt,
-  }
-}
-
-export function getFavoritesByUser(userId: string): Favorite[] {
-  const rows = db.queryAll(
-    'SELECT * FROM favorites WHERE userId = ? ORDER BY createdAt DESC',
-    [userId]
-  )
-  return rows.map(rowToFavorite)
+export function getFavoritesByUser(userId: string): { eventId: string; userId: string; createdAt: string }[] {
+  return queryAll('SELECT * FROM favorites WHERE userId = ? ORDER BY createdAt DESC', [userId]) as any[]
 }
 
 export function isFavorite(eventId: string, userId: string): boolean {
-  const row = db.queryFirst(
-    'SELECT 1 FROM favorites WHERE eventId = ? AND userId = ?',
-    [eventId, userId]
-  )
-  return !!row
+  const result = queryFirst('SELECT * FROM favorites WHERE eventId = ? AND userId = ?', [eventId, userId])
+  return !!result
 }
 
 export function addFavorite(eventId: string, userId: string): void {
-  db.executeSql(
-    'INSERT OR IGNORE INTO favorites (eventId, userId, createdAt) VALUES (?, ?, ?)',
-    [eventId, userId, new Date().toISOString()]
-  )
+  const createdAt = new Date().toISOString()
+  executeSql('INSERT OR IGNORE INTO favorites (eventId, userId, createdAt) VALUES (?, ?, ?)', [eventId, userId, createdAt])
 }
 
 export function removeFavorite(eventId: string, userId: string): void {
-  db.executeSql(
-    'DELETE FROM favorites WHERE eventId = ? AND userId = ?',
-    [eventId, userId]
-  )
+  executeSql('DELETE FROM favorites WHERE eventId = ? AND userId = ?', [eventId, userId])
 }

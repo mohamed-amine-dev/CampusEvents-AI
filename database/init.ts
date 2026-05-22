@@ -1,10 +1,8 @@
-import db from './db'
+import { execBatch, executeSql, queryAll } from './db'
 import { seedEvents } from '../constants/seed'
 
 export function initDatabase() {
-  db.execBatch(`PRAGMA foreign_keys = ON;`)
-
-  db.execBatch(`
+  execBatch(`
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -48,37 +46,33 @@ export function initDatabase() {
       outputText TEXT NOT NULL,
       createdAt TEXT NOT NULL
     );
+
+    PRAGMA foreign_keys = ON;
   `)
 
-  const count = db.queryAll('SELECT COUNT(*) as count FROM events') as { count: number }[]
+  const count = queryAll('SELECT COUNT(*) as count FROM events') as { count: number }[]
   if (count[0].count === 0) {
-    seedDatabase()
+    for (const event of seedEvents) {
+      executeSql(
+        `INSERT INTO events (id, title, description, category, startDateTime, endDateTime, locationName, locationAddress, organizerName, capacity, registeredCount, imageUrl, tags, createdAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          event.id,
+          event.title,
+          event.description,
+          event.category,
+          event.startDateTime,
+          event.endDateTime || null,
+          event.locationName,
+          event.locationAddress || null,
+          event.organizerName,
+          event.capacity ?? null,
+          event.registeredCount || 0,
+          event.imageUrl || null,
+          event.tags ? JSON.stringify(event.tags) : null,
+          event.createdAt,
+        ]
+      )
+    }
   }
 }
-
-function seedDatabase() {
-  const insertStmt = db.prepareInsert(`
-    INSERT INTO events (id, title, description, category, startDateTime, endDateTime, locationName, locationAddress, organizerName, capacity, registeredCount, tags, createdAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-
-  for (const event of seedEvents) {
-    insertStmt(
-      event.id,
-      event.title,
-      event.description,
-      event.category,
-      event.startDateTime,
-      event.endDateTime ?? null,
-      event.locationName,
-      event.locationAddress ?? null,
-      event.organizerName,
-      event.capacity ?? null,
-      event.registeredCount,
-      JSON.stringify(event.tags ?? []),
-      event.createdAt
-    )
-  }
-}
-
-export default db

@@ -1,71 +1,77 @@
+import { View, StyleSheet } from 'react-native'
 import { Tabs } from 'expo-router'
-import { View, Text, StyleSheet, Platform, TouchableOpacity } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../context/ThemeContext'
-import { useAuth } from '../../context/AuthContext'
-import { DarkModeToggle } from '../../components/DarkModeToggle'
+import { BorderRadius, Spacing } from '../../constants/theme'
 
 export default function StudentLayout() {
   const { theme } = useTheme()
-  const { logout, user } = useAuth()
+  const c = theme.colors
 
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
         tabBarStyle: {
-          backgroundColor: theme.colors.tabBarBackground,
-          borderTopColor: theme.colors.tabBarBorder,
-          borderTopWidth: 0.5,
-          height: Platform.OS === 'ios' ? 88 : 68,
-          paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-          paddingTop: 8,
-          elevation: 0,
+          backgroundColor: c.surface,
+          borderTopWidth: 1,
+          borderTopColor: c.border,
+          height: 56,
         },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: '700' },
-        headerRight: () => (
-          <View style={styles.headerRight}>
-            <DarkModeToggle />
-            <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-              <Text style={[styles.logoutText, { color: theme.colors.error }]}>Déconnexion</Text>
-            </TouchableOpacity>
-          </View>
-        ),
+        tabBarActiveTintColor: c.primary,
+        tabBarInactiveTintColor: c.textMuted,
+        tabBarShowLabel: false,
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tabs.Screen
-        name="events"
+        name="catalog"
         options={{
-          title: 'Événements',
-          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size - 4 }}>📅</Text>,
-          headerTitle: 'CampusEvents',
+          tabBarIcon: ({ focused, color }) => (
+            <View style={styles.iconWrap}>
+              <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favoris',
-          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size - 4 }}>❤️</Text>,
-        }}
-      />
-      <Tabs.Screen
-        name="registrations"
-        options={{
-          title: 'Inscriptions',
-          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size - 4 }}>📋</Text>,
+          tabBarIcon: ({ focused, color }) => (
+            <View style={styles.iconWrap}>
+              <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="assistant"
         options={{
-          title: 'Assistant',
-          tabBarIcon: ({ color, size }) => <Text style={{ fontSize: size - 4 }}>🤖</Text>,
+          tabBarIcon: ({ focused }) => (
+            <View style={[styles.aiTab, focused && { backgroundColor: c.primary }]}>
+              <Ionicons name="flash" size={24} color={focused ? '#fff' : c.textMuted} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="registrations"
+        options={{
+          tabBarIcon: ({ focused, color }) => (
+            <View style={styles.iconWrap}>
+              <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          tabBarIcon: ({ focused, color }) => (
+            <View style={styles.iconWrap}>
+              <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+            </View>
+          ),
         }}
       />
     </Tabs>
@@ -73,17 +79,13 @@ export default function StudentLayout() {
 }
 
 const styles = StyleSheet.create({
-  headerRight: {
-    flexDirection: 'row',
+  iconWrap: { justifyContent: 'center', alignItems: 'center', height: '100%' },
+  aiTab: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#E2E8F0',
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 12,
-    marginRight: 12,
-  },
-  logoutBtn: {
-    paddingHorizontal: 4,
-  },
-  logoutText: {
-    fontSize: 13,
-    fontWeight: '600',
   },
 })

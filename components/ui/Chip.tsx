@@ -1,5 +1,5 @@
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native'
-import { useTheme } from '../../context/ThemeContext'
+import { Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native'
+import { Colors, FontSize, FontWeight, BorderRadius, Spacing } from '../../constants/theme'
 
 interface ChipProps {
   label: string
@@ -9,44 +9,37 @@ interface ChipProps {
 }
 
 export function Chip({ label, selected, onPress, style }: ChipProps) {
-  const { theme } = useTheme()
-
   return (
     <TouchableOpacity
+      style={[styles.chip, selected && styles.selected, style]}
       onPress={onPress}
-      activeOpacity={0.7}
-      style={[
-        styles.chip,
-        {
-          backgroundColor: selected ? theme.colors.primary : theme.colors.chipBackground,
-          borderColor: selected ? theme.colors.primary : theme.colors.border,
-        },
-        style,
-      ]}
+      activeOpacity={0.8}
     >
-      <Text
-        style={[
-          styles.label,
-          { color: selected ? theme.colors.textInverse : theme.colors.chipText },
-        ]}
-      >
-        {label}
-      </Text>
+      <Text style={[styles.text, selected && styles.textSelected]}>{label}</Text>
     </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
   chip: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.surface,
     borderWidth: 1,
-    marginRight: 8,
-    marginBottom: 8,
+    borderColor: Colors.border,
   },
-  label: {
-    fontSize: 13,
-    fontWeight: '500',
+  selected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  text: {
+    fontSize: FontSize.label,
+    fontWeight: FontWeight.medium,
+    color: Colors.textSecondary,
+  },
+  textSelected: {
+    color: Colors.textWhite,
+    fontWeight: FontWeight.semibold,
   },
 })

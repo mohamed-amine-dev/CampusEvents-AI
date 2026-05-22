@@ -1,6 +1,21 @@
-import { Event } from '../types'
+export interface SeedEvent {
+  id: string
+  title: string
+  description: string
+  category: string
+  startDateTime: string
+  endDateTime?: string
+  locationName: string
+  locationAddress?: string
+  organizerName: string
+  capacity?: number
+  registeredCount: number
+  imageUrl?: string
+  tags?: string[]
+  createdAt: string
+}
 
-export const seedEvents: Event[] = [
+export const seedEvents: SeedEvent[] = [
   {
     id: 'seed-1',
     title: 'Introduction au Machine Learning',
@@ -20,7 +35,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-2',
     title: 'Hackathon Développement Web',
-    description: '48 heures pour créer une application web innovante. Équipes de 3 à 4 personnes. Prix à gagner pour les meilleurs projets : smartphones, bons d\'achat et stages en entreprise. Restauration sur place.',
+    description: '48 heures pour créer une application web innovante. Équipes de 3 à 4 personnes. Prix à gagner pour les meilleurs projets : smartphones, bons d\'achat et stages en entreprise.',
     category: 'Club',
     startDateTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000).toISOString(),
@@ -36,7 +51,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-3',
     title: 'Conférence : Carrières dans la Data Science',
-    description: 'Rencontre avec des professionnels du secteur pour discuter des parcours et débouchés en data science et big data. Intervenants de grandes entreprises tech locales. Sessions de networking après la conférence.',
+    description: 'Rencontre avec des professionnels du secteur pour discuter des parcours et débouchés en data science et big data. Sessions de networking après la conférence.',
     category: 'Talk',
     startDateTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
@@ -52,7 +67,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-4',
     title: 'Atelier CV et Lettre de Motivation',
-    description: 'Atelier pratique pour améliorer votre CV et lettre de motivation avec les conseils de recruteurs professionnels. Apportez votre CV actuel pour un feedback personnalisé. Places limitées pour un accompagnement de qualité.',
+    description: 'Atelier pratique pour améliorer votre CV et lettre de motivation avec les conseils de recruteurs professionnels. Apportez votre CV actuel pour un feedback personnalisé.',
     category: 'Workshop',
     startDateTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
@@ -68,7 +83,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-5',
     title: 'Examen de rattrapage - Algorithmique',
-    description: 'Examen de rattrapage pour le module Algorithmique et Structures de Données. Durée : 2 heures. Documents non autorisés. Les étudiants concernés doivent confirmer leur présence.',
+    description: 'Examen de rattrapage pour le module Algorithmique et Structures de Données. Durée : 2 heures. Documents non autorisés.',
     category: 'Exam',
     startDateTime: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
@@ -83,7 +98,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-6',
     title: 'Sortie Culturelle : Visite de la Ville',
-    description: 'Visite guidée de la médina organisée par le club culturel. Découverte des monuments historiques, dégustation de spécialités locales. Transport et repas inclus. Départ devant l\'université à 9h.',
+    description: 'Visite guidée de la médina organisée par le club culturel. Découverte des monuments historiques, dégustation de spécialités locales. Transport et repas inclus.',
     category: 'Other',
     startDateTime: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000).toISOString(),
@@ -98,7 +113,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-7',
     title: 'Workshop React Native',
-    description: 'Apprenez à développer des applications mobiles cross-platform avec React Native et Expo. De zéro à une première application fonctionnelle en une après-midi. Ordinateur portable requis.',
+    description: 'Apprenez à développer des applications mobiles cross-platform avec React Native et Expo. De zéro à une première application fonctionnelle en une après-midi.',
     category: 'Workshop',
     startDateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000).toISOString(),
@@ -114,7 +129,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-8',
     title: 'Conférence : Cybersécurité au Quotidien',
-    description: 'Sensibilisation aux bonnes pratiques de cybersécurité pour les étudiants. Protégez vos données personnelles, reconnaissez les phishing, sécurisez vos comptes. Démonstrations en direct.',
+    description: 'Sensibilisation aux bonnes pratiques de cybersécurité pour les étudiants. Protégez vos données personnelles, reconnaissez les phishing, sécurisez vos comptes.',
     category: 'Talk',
     startDateTime: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000 + 1.5 * 60 * 60 * 1000).toISOString(),
@@ -129,7 +144,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-9',
     title: 'Tournoi de Football Inter-Clubs',
-    description: 'Tournoi annuel de football entre les clubs de l\'université. Inscriptions par équipe de 7 joueurs + 2 remplaçants. Arbitrage professionnel. Trophées et médailles pour les trois premières équipes.',
+    description: 'Tournoi annuel de football entre les clubs de l\'université. Inscriptions par équipe de 7 joueurs + 2 remplaçants. Arbitrage professionnel.',
     category: 'Club',
     startDateTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
     locationName: 'Stade Universitaire',
@@ -143,7 +158,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-10',
     title: 'Séance de Yoga & Méditation',
-    description: 'Séance de relaxation et méditation pour décompresser entre les examens. Accessible à tous les niveaux. Tapis de yoga fournis. Tenue confortable recommandée.',
+    description: 'Séance de relaxation et méditation pour décompresser entre les examens. Accessible à tous les niveaux. Tapis de yoga fournis.',
     category: 'Other',
     startDateTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 1 * 60 * 60 * 1000).toISOString(),
@@ -159,7 +174,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-11',
     title: 'Conférence : Entrepreneuriat Digital',
-    description: 'Retour d\'expérience d\'entrepreneurs locaux qui ont lancé leur startup tech. Du concept à la levée de fonds : le parcours inspirant de founders marocains. Session Q&A interactive.',
+    description: 'Retour d\'expérience d\'entrepreneurs locaux qui ont lancé leur startup tech. Du concept à la levée de fonds : le parcours inspirant de founders marocains.',
     category: 'Talk',
     startDateTime: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
@@ -174,7 +189,7 @@ export const seedEvents: Event[] = [
   {
     id: 'seed-12',
     title: 'Atelier : Introduction à Git & GitHub',
-    description: 'Atelier pratique pour maîtriser les bases du versioning avec Git et GitHub. Créez votre premier repository, gérez les branches, collaborez en équipe. Atelier hands-on, venez avec votre PC.',
+    description: 'Atelier pratique pour maîtriser les bases du versioning avec Git et GitHub. Créez votre premier repository, gérez les branches, collaborez en équipe.',
     category: 'Workshop',
     startDateTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     endDateTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),

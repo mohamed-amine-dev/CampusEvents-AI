@@ -2,20 +2,12 @@ import { Platform } from 'react-native'
 
 const isWeb = Platform.OS === 'web'
 
-let db: {
-  executeSql(sql: string, params?: any[]): void
-  queryAll(sql: string, params?: any[]): any[]
-  queryFirst(sql: string, params?: any[]): any | null
-  execBatch(sql: string): void
-  prepareInsert(sql: string): (...args: any[]) => void
-}
+const dbModule = isWeb
+  ? require('./db.web')
+  : require('./db.native')
 
-if (isWeb) {
-  const webDb = require('./db.web')
-  db = webDb
-} else {
-  const nativeDb = require('./db.native')
-  db = nativeDb
-}
-
-export default db
+export const executeSql: (sql: string, params?: any[]) => void = dbModule.executeSql
+export const queryAll: (sql: string, params?: any[]) => any[] = dbModule.queryAll
+export const queryFirst: (sql: string, params?: any[]) => any | null = dbModule.queryFirst
+export const execBatch: (sql: string) => void = dbModule.execBatch
+export const prepareInsert: (sql: string) => (...args: any[]) => void = dbModule.prepareInsert

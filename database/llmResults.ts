@@ -1,44 +1,32 @@
-import { LLMResult } from '../types'
-import db from './init'
+import { queryAll, queryFirst, executeSql } from './db'
 
-function rowToLLMResult(row: any): LLMResult {
-  return {
-    id: row.id,
-    eventId: row.eventId ?? undefined,
-    userId: row.userId,
-    type: row.type,
-    inputText: row.inputText,
-    outputText: row.outputText,
-    createdAt: row.createdAt,
-  }
+export interface LLMResult {
+  id: string
+  eventId?: string
+  userId: string
+  type: string
+  inputText: string
+  outputText: string
+  createdAt: string
 }
 
 export function saveLLMResult(result: LLMResult): void {
-  db.executeSql(
-    'INSERT OR REPLACE INTO llm_results (id, eventId, userId, type, inputText, outputText, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  executeSql(
+    'INSERT INTO llm_results (id, eventId, userId, type, inputText, outputText, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [result.id, result.eventId ?? null, result.userId, result.type, result.inputText, result.outputText, result.createdAt]
   )
 }
 
-export function getCachedResult(userId: string, type: string, inputText: string): LLMResult | undefined {
-  const rows = db.queryAll(
+export function getCachedLLMResult(userId: string, type: string, inputText: string): LLMResult | null {
+  return queryFirst(
     'SELECT * FROM llm_results WHERE userId = ? AND type = ? AND inputText = ? ORDER BY createdAt DESC LIMIT 1',
     [userId, type, inputText]
-  ) as any[]
-  return rows.length > 0 ? rowToLLMResult(rows[0]) : undefined
+  ) as any
 }
 
 export function getLLMResultsByUser(userId: string, type?: string): LLMResult[] {
   if (type) {
-    const rows = db.queryAll(
-      'SELECT * FROM llm_results WHERE userId = ? AND type = ? ORDER BY createdAt DESC',
-      [userId, type]
-    )
-    return rows.map(rowToLLMResult)
+    return queryAll('SELECT * FROM llm_results WHERE userId = ? AND type = ? ORDER BY createdAt DESC', [userId, type]) as any[]
   }
-  const rows = db.queryAll(
-    'SELECT * FROM llm_results WHERE userId = ? ORDER BY createdAt DESC',
-    [userId]
-  )
-  return rows.map(rowToLLMResult)
+  return queryAll('SELECT * FROM llm_results WHERE userId = ? ORDER BY createdAt DESC', [userId]) as any[]
 }

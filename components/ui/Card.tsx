@@ -1,51 +1,35 @@
-import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native'
-import { useTheme } from '../../context/ThemeContext'
+import { ReactNode } from 'react'
+import { View, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native'
+import { Colors, BorderRadius, Spacing, Shadow } from '../../constants/theme'
 
 interface CardProps {
-  children: React.ReactNode
+  children: ReactNode
   onPress?: () => void
   style?: ViewStyle
-  padded?: boolean
+  noPadding?: boolean
 }
 
-export function Card({ children, onPress, style, padded = true }: CardProps) {
-  const { theme } = useTheme()
-
-  const content = (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.dark ? theme.colors.border : 'transparent',
-          shadowColor: theme.colors.cardShadow,
-          padding: padded ? 16 : 0,
-        },
-        style,
-      ]}
+export function Card({ children, onPress, style, noPadding }: CardProps) {
+  const Wrapper = onPress ? TouchableOpacity : View
+  return (
+    <Wrapper
+      style={[styles.card, noPadding && styles.noPadding, style]}
+      onPress={onPress}
+      activeOpacity={0.95}
     >
       {children}
-    </View>
+    </Wrapper>
   )
-
-  if (onPress) {
-    return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        {content}
-      </TouchableOpacity>
-    )
-  }
-
-  return content
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 0.5,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadow.level1,
   },
+  noPadding: { padding: 0 },
 })

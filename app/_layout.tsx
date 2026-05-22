@@ -1,67 +1,44 @@
-import { useEffect, useRef } from 'react'
-import { Stack, useRouter, useSegments } from 'expo-router'
+import { useEffect } from 'react'
+import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { StyleSheet } from 'react-native'
 import { ThemeProvider, useTheme } from '../context/ThemeContext'
-import { AuthProvider, useAuth } from '../context/AuthContext'
+import { AuthProvider } from '../context/AuthContext'
 import { initDatabase } from '../database/init'
-import { View, ActivityIndicator } from 'react-native'
 
-function RootLayoutContent() {
-  const { user, isLoading } = useAuth()
+function RootContent() {
   const { theme } = useTheme()
-  const segments = useSegments()
-  const router = useRouter()
-  const dbReady = useRef(false)
-
-  useEffect(() => {
-    if (dbReady.current) return
-    try { initDatabase() } catch (e) { console.warn('DB init error:', e) }
-    dbReady.current = true
-  }, [])
-
-  useEffect(() => {
-    if (isLoading) return
-
-    const inAuthGroup = segments[0] === 'login'
-
-    if (!user && !inAuthGroup) {
-      router.replace('/login')
-    } else if (user && inAuthGroup) {
-      if (user.role === 'admin') {
-        router.replace('/(admin)')
-      } else {
-        router.replace('/(student)')
-      }
-    }
-  }, [user, isLoading])
-
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    )
-  }
 
   return (
     <>
-      <StatusBar style={theme.colors.statusBar} />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="login" />
+      <StatusBar style={theme.dark ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+        <Stack.Screen name="index" />
         <Stack.Screen name="(admin)" />
         <Stack.Screen name="(student)" />
-        <Stack.Screen name="event/[id]" options={{ headerShown: true, presentation: 'card' }} />
+        <Stack.Screen name="event/[id]" />
       </Stack>
     </>
   )
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    try { initDatabase() } catch (e) { console.warn('DB init error:', e) }
+  }, [])
+
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <RootLayoutContent />
-      </AuthProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={styles.container}>
+      <ThemeProvider>
+        <AuthProvider>
+          <RootContent />
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+})

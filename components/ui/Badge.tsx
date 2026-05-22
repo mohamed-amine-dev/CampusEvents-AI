@@ -1,19 +1,20 @@
-import { View, Text, StyleSheet } from 'react-native'
-import { useTheme } from '../../context/ThemeContext'
+import { View, Text, StyleSheet, ViewStyle } from 'react-native'
+import { Colors, FontSize, FontWeight, BorderRadius, Spacing, getCategoryStyle } from '../../constants/theme'
 
 interface BadgeProps {
   label: string
+  variant?: 'category' | 'status' | 'default'
   color?: string
+  style?: ViewStyle
 }
 
-export function Badge({ label, color }: BadgeProps) {
-  const { theme } = useTheme()
-
-  const bgColor = color || theme.colors.primaryLight
-  const textColor = color ? theme.colors.textInverse : theme.colors.primary
+export function Badge({ label, variant = 'default', color, style }: BadgeProps) {
+  const categoryStyle = variant === 'category' ? getCategoryStyle(label) : null
+  const bgColor = color || categoryStyle?.bg || Colors.borderLight
+  const textColor = color || categoryStyle?.text || Colors.textSecondary
 
   return (
-    <View style={[styles.badge, { backgroundColor: bgColor }]}>
+    <View style={[styles.badge, { backgroundColor: bgColor }, style]}>
       <Text style={[styles.text, { color: textColor }]}>{label}</Text>
     </View>
   )
@@ -21,13 +22,15 @@ export function Badge({ label, color }: BadgeProps) {
 
 const styles = StyleSheet.create({
   badge: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
     alignSelf: 'flex-start',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.sm,
   },
   text: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: FontSize.caption,
+    fontWeight: FontWeight.semibold,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 })
