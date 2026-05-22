@@ -9,11 +9,18 @@ import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate
 import { Badge, Button, EmptyState } from '../../components/ui'
 
 export default function AdminEventsScreen() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const [events, setEvents] = useState<Event[]>([])
   const [refreshing, setRefreshing] = useState(false)
+
+  function handleLogout() {
+    Alert.alert('Déconnexion', 'Es-tu sûr de vouloir te déconnecter ?', [
+      { text: 'Annuler', style: 'cancel' },
+      { text: 'Se déconnecter', style: 'destructive', onPress: async () => { await logout(); router.replace('/') } },
+    ])
+  }
 
   function loadEvents() {
     setEvents(getAllEvents())
@@ -82,9 +89,14 @@ export default function AdminEventsScreen() {
           <Text style={styles.title}>Événements</Text>
           <Text style={styles.count}>{events.length} au total</Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/(admin)/create')}>
-          <Ionicons name="add" size={24} color={Colors.textWhite} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
+          <TouchableOpacity style={styles.addBtn} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={22} color={Colors.textWhite} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/(admin)/create')}>
+            <Ionicons name="add" size={24} color={Colors.textWhite} />
+          </TouchableOpacity>
+        </View>
       </View>
       <FlatList
         data={events}

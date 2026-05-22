@@ -1,14 +1,30 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Stack } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { StyleSheet } from 'react-native'
+import { useRouter } from 'expo-router'
 import { ThemeProvider, useTheme } from '../context/ThemeContext'
-import { AuthProvider } from '../context/AuthContext'
+import { AuthProvider, useAuth } from '../context/AuthContext'
 import { initDatabase } from '../database/init'
 
 function RootContent() {
+  const { user, isLoading } = useAuth()
   const { theme } = useTheme()
+  const router = useRouter()
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (!isLoading) setReady(true)
+  }, [isLoading])
+
+  useEffect(() => {
+    if (ready && !user) {
+      router.replace('/')
+    }
+  }, [ready, user])
+
+  if (!ready) return null
 
   return (
     <>
