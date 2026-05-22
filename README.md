@@ -172,6 +172,4 @@ Ce projet a été développé dans le cadre d'un mini-projet universitaire (Univ
 
 ---
 
-## 📄 Licence
 
-MIT
