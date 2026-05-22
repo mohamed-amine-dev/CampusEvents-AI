@@ -14,7 +14,7 @@ function rowToRegistration(row: any): Registration {
 }
 
 export function getRegistrationsByUser(userId: string): Registration[] {
-  const rows = db.getAllSync(
+  const rows = db.queryAll(
     'SELECT * FROM registrations WHERE userId = ? ORDER BY createdAt DESC',
     [userId]
   )
@@ -22,7 +22,7 @@ export function getRegistrationsByUser(userId: string): Registration[] {
 }
 
 export function getRegistration(eventId: string, userId: string): Registration | undefined {
-  const row = db.getFirstSync(
+  const row = db.queryFirst(
     'SELECT * FROM registrations WHERE eventId = ? AND userId = ?',
     [eventId, userId]
   ) as any
@@ -44,24 +44,20 @@ export function registerForEvent(eventId: string, userId: string): { success: bo
   if (existing) return { success: false, error: 'Vous êtes déjà inscrit' }
 
   const id = uuidv4()
-  db.runSync(
+  db.executeSql(
     'INSERT INTO registrations (id, eventId, userId, createdAt, status) VALUES (?, ?, ?, ?, ?)',
-    id,
-    eventId,
-    userId,
-    new Date().toISOString(),
-    'confirmed'
+    [id, eventId, userId, new Date().toISOString(), 'confirmed']
   )
 
-  db.runSync('UPDATE events SET registeredCount = registeredCount + 1 WHERE id = ?', [eventId])
+  db.executeSql('UPDATE events SET registeredCount = registeredCount + 1 WHERE id = ?', [eventId])
 
   return { success: true }
 }
 
 export function cancelRegistration(eventId: string, userId: string): void {
-  db.runSync(
+  db.executeSql(
     'DELETE FROM registrations WHERE eventId = ? AND userId = ?',
     [eventId, userId]
   )
-  db.runSync('UPDATE events SET registeredCount = MAX(0, registeredCount - 1) WHERE id = ?', [eventId])
+  db.executeSql('UPDATE events SET registeredCount = MAX(0, registeredCount - 1) WHERE id = ?', [eventId])
 }

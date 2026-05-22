@@ -10,7 +10,7 @@ function rowToFavorite(row: any): Favorite {
 }
 
 export function getFavoritesByUser(userId: string): Favorite[] {
-  const rows = db.getAllSync(
+  const rows = db.queryAll(
     'SELECT * FROM favorites WHERE userId = ? ORDER BY createdAt DESC',
     [userId]
   )
@@ -18,7 +18,7 @@ export function getFavoritesByUser(userId: string): Favorite[] {
 }
 
 export function isFavorite(eventId: string, userId: string): boolean {
-  const row = db.getFirstSync(
+  const row = db.queryFirst(
     'SELECT 1 FROM favorites WHERE eventId = ? AND userId = ?',
     [eventId, userId]
   )
@@ -26,16 +26,14 @@ export function isFavorite(eventId: string, userId: string): boolean {
 }
 
 export function addFavorite(eventId: string, userId: string): void {
-  db.runSync(
+  db.executeSql(
     'INSERT OR IGNORE INTO favorites (eventId, userId, createdAt) VALUES (?, ?, ?)',
-    eventId,
-    userId,
-    new Date().toISOString()
+    [eventId, userId, new Date().toISOString()]
   )
 }
 
 export function removeFavorite(eventId: string, userId: string): void {
-  db.runSync(
+  db.executeSql(
     'DELETE FROM favorites WHERE eventId = ? AND userId = ?',
     [eventId, userId]
   )

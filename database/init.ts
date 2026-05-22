@@ -1,12 +1,10 @@
-import * as SQLite from 'expo-sqlite'
+import db from './db'
 import { seedEvents } from '../constants/seed'
 
-const db = SQLite.openDatabaseSync('campusevents.db')
-
 export function initDatabase() {
-  db.execSync(`PRAGMA foreign_keys = ON;`)
+  db.execBatch(`PRAGMA foreign_keys = ON;`)
 
-  db.execSync(`
+  db.execBatch(`
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
@@ -52,20 +50,20 @@ export function initDatabase() {
     );
   `)
 
-  const count = db.getAllSync('SELECT COUNT(*) as count FROM events') as { count: number }[]
+  const count = db.queryAll('SELECT COUNT(*) as count FROM events') as { count: number }[]
   if (count[0].count === 0) {
     seedDatabase()
   }
 }
 
 function seedDatabase() {
-  const insertStmt = db.prepareSync(`
+  const insertStmt = db.prepareInsert(`
     INSERT INTO events (id, title, description, category, startDateTime, endDateTime, locationName, locationAddress, organizerName, capacity, registeredCount, tags, createdAt)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
 
   for (const event of seedEvents) {
-    insertStmt.executeSync(
+    insertStmt(
       event.id,
       event.title,
       event.description,
