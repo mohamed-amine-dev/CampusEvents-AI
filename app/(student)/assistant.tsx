@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from 'react'
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native'
+import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
+import Constants from 'expo-constants'
 import { useAuth } from '../../context/AuthContext'
 import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow } from '../../constants/theme'
 import { Badge, EmptyState } from '../../components/ui'
@@ -23,6 +24,14 @@ type Message = {
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
+function getApiKey(): string {
+  const fromEnv = process.env.EXPO_PUBLIC_GROQ_API_KEY
+  if (fromEnv) return fromEnv
+  const fromExtra = (Constants.expoConfig as any)?.extra?.groqApiKey
+  if (fromExtra && fromExtra !== 'gsk_your_key_here') return fromExtra
+  return ''
+}
+
 export default function AssistantScreen() {
   const { user } = useAuth()
   const insets = useSafeAreaInsets()
@@ -33,11 +42,16 @@ export default function AssistantScreen() {
   const [error, setError] = useState('')
   const inputRef = useRef<TextInput>(null)
 
-  const apiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY || ''
+  const apiKey = getApiKey()
 
   async function handleSend() {
     const text = inputText.trim()
     if (!text || loading) return
+
+    if (!apiKey) {
+      setError('Clé API manquante. Configure EXPO_PUBLIC_GROQ_API_KEY dans .env')
+      return
+    }
 
     setInputText('')
     setError('')
@@ -54,7 +68,7 @@ export default function AssistantScreen() {
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'llama3-70b-8192',
+          model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: `Tu es un assistant spécialisé dans les événements du campus. Réponds en français de manière concise et utile. Type de requête: ${activeTab}.` },
             { role: 'user', content: text },

@@ -11,3 +11,4 @@ export const queryAll: (sql: string, params?: any[]) => any[] = dbModule.queryAl
 export const queryFirst: (sql: string, params?: any[]) => any | null = dbModule.queryFirst
 export const execBatch: (sql: string) => void = dbModule.execBatch
 export const prepareInsert: (sql: string) => (...args: any[]) => void = dbModule.prepareInsert
+export const waitForDb: () => Promise<void> = dbModule.waitForDb || (() => Promise.resolve())

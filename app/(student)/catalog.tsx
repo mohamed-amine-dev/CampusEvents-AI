@@ -65,7 +65,7 @@ export default function CatalogScreen() {
     useCallback(() => {
       loadEvents()
       loadFavorites()
-    }, [])
+    }, [user])
   )
 
   function onRefresh() {

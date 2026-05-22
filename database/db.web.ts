@@ -17,18 +17,26 @@ interface Schema {
 const schemas: Record<string, Schema> = {}
 let tables: Record<string, any[]> = {}
 
+let _dbReady: (() => void) | null = null
+const dbReadyPromise = new Promise<void>((resolve) => { _dbReady = resolve })
+
 async function loadTables() {
   try {
     const data = await AsyncStorage.getItem(TABLES_KEY)
     if (data) tables = JSON.parse(data)
   } catch {}
+  _dbReady?.()
 }
 
-async function saveTables() {
-  await AsyncStorage.setItem(TABLES_KEY, JSON.stringify(tables))
+function saveTables() {
+  AsyncStorage.setItem(TABLES_KEY, JSON.stringify(tables))
 }
 
 loadTables()
+
+export function waitForDb(): Promise<void> {
+  return dbReadyPromise
+}
 
 function normalize(v: any): any {
   if (v === null || v === undefined) return null

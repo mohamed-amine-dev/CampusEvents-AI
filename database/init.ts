@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { execBatch, executeSql, queryAll } from './db'
+import { execBatch, executeSql, queryAll, waitForDb } from './db'
 import { seedEvents } from '../constants/seed'
 
-const SCHEMA_VERSION = 'v3'
+const SCHEMA_VERSION = 'v4'
 
 export async function initDatabase() {
+  await waitForDb()
+
   execBatch(`
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
