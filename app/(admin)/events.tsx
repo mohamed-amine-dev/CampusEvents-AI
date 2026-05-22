@@ -18,7 +18,7 @@ export default function AdminEventsScreen() {
   function handleLogout() {
     Alert.alert('Déconnexion', 'Es-tu sûr de vouloir te déconnecter ?', [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Se déconnecter', style: 'destructive', onPress: async () => { await logout(); router.replace('/') } },
+      { text: 'Se déconnecter', style: 'destructive', onPress: async () => { await logout() } },
     ])
   }
 

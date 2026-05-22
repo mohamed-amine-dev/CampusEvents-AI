@@ -9,7 +9,7 @@ import { getEventById, Event } from '../../database/events'
 import { isFavorite, addFavorite, removeFavorite } from '../../database/favorites'
 import { registerForEvent, cancelRegistration, getRegistrationByEventAndUser } from '../../database/registrations'
 import { generateId } from '../../utils/uuid'
-import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate, formatDateLong, getCategoryStyle } from '../../constants/theme'
+import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate, formatDateLong, getCategoryStyle, getEventImage } from '../../constants/theme'
 import { Badge, Button } from '../../components/ui'
 
 export default function EventDetailScreen() {
@@ -83,17 +83,12 @@ export default function EventDetailScreen() {
   const fd = formatDate(event.startDateTime)
   const catStyle = getCategoryStyle(event.category)
   const capacityPercent = event.capacity ? Math.min(event.registeredCount / event.capacity * 100, 100) : 0
+  const heroImageUri = getEventImage(event.imageUrl, event.category)
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.hero}>
-        {event.imageUrl ? (
-          <Image source={{ uri: event.imageUrl }} style={styles.heroImage} />
-        ) : (
-          <View style={[styles.heroPlaceholder, { backgroundColor: catStyle.bg }]}>
-            <Ionicons name="calendar" size={48} color={catStyle.text} />
-          </View>
-        )}
+        <Image source={{ uri: heroImageUri! }} style={styles.heroImage} />
         <View style={styles.heroOverlay} />
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />

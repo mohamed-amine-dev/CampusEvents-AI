@@ -109,6 +109,20 @@ export function getCategoryStyle(category: string) {
   }
 }
 
+// Returns imageUrl if set, otherwise a beautiful category-matched fallback photo
+export function getEventImage(imageUrl?: string, category?: string): string | null {
+  if (imageUrl) return imageUrl
+  const fallbacks: Record<string, string> = {
+    Workshop: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&q=80',
+    Talk: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=600&q=80',
+    Club: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=600&q=80',
+    Exam: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=600&q=80',
+    Other: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80',
+  }
+  return fallbacks[category ?? ''] ?? 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&q=80'
+}
+
+
 export function formatDate(dateStr: string): { day: string; month: string; time: string } {
   const d = new Date(dateStr)
   if (isNaN(d.getTime())) return { day: '--', month: '---', time: '--:--' }

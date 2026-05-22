@@ -32,14 +32,14 @@ export function Button({ title, onPress, variant = 'primary', size = 'md', loadi
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' || variant === 'danger' ? Colors.textWhite : Colors.primary} />
+        <ActivityIndicator color={variant === 'primary' ? Colors.textWhite : variant === 'danger' ? Colors.error : Colors.primary} />
       ) : (
         <Text style={[
           styles.text,
           { fontSize },
           variant === 'primary' && styles.textPrimary,
           variant === 'secondary' && styles.textSecondary,
-          variant === 'danger' && styles.textPrimary,
+          variant === 'danger' && styles.textDanger,
           disabled && styles.textDisabled,
           textStyle,
         ]}>
@@ -75,5 +75,6 @@ const styles = StyleSheet.create({
   text: { letterSpacing: 0.3, fontWeight: FontWeight.semibold },
   textPrimary: { color: Colors.textWhite },
   textSecondary: { color: Colors.textPrimary },
+  textDanger: { color: Colors.error },
   textDisabled: { color: Colors.textMuted },
 })

@@ -12,6 +12,7 @@ interface Schema {
   name: string
   columns: ColumnDef[]
   primaryKey?: string
+  compositePrimaryKey?: string[]
 }
 
 const schemas: Record<string, Schema> = {}
@@ -49,12 +50,14 @@ function parseInsert(sql: string) {
   const m = sql.match(/INSERT\s+(?:OR\s+(\w+)\s+)?INTO\s+(\w+)\s*\(([\s\S]*?)\)\s*VALUES\s*\(([\s\S]*?)\)/i)
   if (!m) throw new Error('Cannot parse INSERT: ' + sql)
   const table = m[2].toLowerCase()
-  const columns = m[3].split(',').map(s => s.trim().toLowerCase())
+  // Preserve original column casing so row keys match TypeScript interface properties
+  const columns = m[3].split(',').map(s => s.trim())
   return { modifier: m[1]?.toLowerCase(), table, columns }
 }
 
 function parseSelect(sql: string) {
-  const m = sql.match(/SELECT\s+.+\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+))?(?:\s+ORDER\s+BY\s+(\w+)\s*(ASC|DESC)?)?(?:\s+LIMIT\s+(\d+))?/i)
+  // Use non-greedy WHERE capture so ORDER BY isn't swallowed by the WHERE group
+  const m = sql.match(/SELECT\s+.+?\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+?))?(?:\s+ORDER\s+BY\s+(\w+)\s*(ASC|DESC)?)?(?:\s+LIMIT\s+(\d+))?$/i)
   if (!m) throw new Error('Cannot parse SELECT: ' + sql)
   const table = m[1].toLowerCase()
   const whereClause = m[2] || ''
@@ -71,7 +74,8 @@ function parseSelect(sql: string) {
     }
   }
 
-  return { table, conditions, orderBy: orderCol ? { col: orderCol.toLowerCase(), dir: orderDir || 'ASC' } : undefined, limit }
+  // orderCol from DB column names (preserve casing for lookup but normalize for storage key)
+  return { table, conditions, orderBy: orderCol ? { col: orderCol, dir: orderDir || 'ASC' } : undefined, limit }
 }
 
 function parseUpdate(sql: string) {
@@ -82,10 +86,16 @@ function parseUpdate(sql: string) {
   const whereClause = m[3] || ''
 
   const setCols: string[] = []
+  const setExprs: { col: string; expr: string }[] = []
   const setParts = setClause.split(',')
   for (const part of setParts) {
     const cm = part.match(/(\w+)\s*=\s*\?/i)
-    if (cm) setCols.push(cm[1].toLowerCase())
+    if (cm) {
+      setCols.push(cm[1].toLowerCase())
+    } else {
+      const em = part.match(/(\w+)\s*=\s*(.+)/i)
+      if (em) setExprs.push({ col: em[1].toLowerCase(), expr: em[2].trim() })
+    }
   }
 
   const conditions: string[] = []
@@ -97,7 +107,26 @@ function parseUpdate(sql: string) {
     }
   }
 
-  return { table, setCols, conditions }
+  return { table, setCols, setExprs, conditions }
+}
+
+function evalExpr(expr: string, row: Record<string, any>): { key: string; value: any } | undefined {
+  const simpleInc = expr.match(/^(\w+)\s*\+\s*(\d+)$/)
+  if (simpleInc) {
+    const col = simpleInc[1]
+    const n = parseInt(simpleInc[2])
+    const existingKey = Object.keys(row).find(k => k.toLowerCase() === col.toLowerCase()) ?? col
+    return { key: existingKey, value: (getRowVal(row, col) || 0) + n }
+  }
+  const maxExpr = expr.match(/^MAX\s*\(\s*(\d+)\s*,\s*(\w+)\s*-\s*(\d+)\s*\)$/i)
+  if (maxExpr) {
+    const floor = parseInt(maxExpr[1])
+    const col = maxExpr[2]
+    const n = parseInt(maxExpr[3])
+    const existingKey = Object.keys(row).find(k => k.toLowerCase() === col.toLowerCase()) ?? col
+    return { key: existingKey, value: Math.max(floor, (getRowVal(row, col) || 0) - n) }
+  }
+  return undefined
 }
 
 function parseDelete(sql: string) {
@@ -118,15 +147,25 @@ function parseDelete(sql: string) {
   return { table, conditions }
 }
 
+// Case-insensitive column lookup: find the actual key in the row regardless of casing
+function getRowVal(row: Record<string, any>, col: string): any {
+  if (col in row) return row[col]
+  const lower = col.toLowerCase()
+  for (const key of Object.keys(row)) {
+    if (key.toLowerCase() === lower) return row[key]
+  }
+  return undefined
+}
+
 function matchesRow(row: Record<string, any>, conditions: string[], params: any[]): boolean {
   let paramIdx = 0
   for (const cond of conditions) {
     const opMatch = cond.match(/(\w+)\s*(=|!=|<>|>|<|>=|<=|LIKE|IN|IS\s+NOT|IS)\s*(.+)/i)
     if (!opMatch) continue
-    const col = opMatch[1].toLowerCase()
+    const col = opMatch[1]
     const op = opMatch[2].toUpperCase().trim()
     const valPlaceholder = opMatch[3].trim()
-    const rowVal = row[col]
+    const rowVal = getRowVal(row, col)
 
     if (op === 'IS NOT' || op === 'IS') {
       const target = valPlaceholder.toUpperCase()
@@ -181,25 +220,43 @@ export function executeSql(sql: string, params?: any[]): void {
     columns.forEach((col, i) => { row[col] = normalize(params![i]) })
 
     if (modifier === 'ignore') {
-      const pk = schemas[table]?.primaryKey
-      if (pk && row[pk] !== null && tables[table].some((r: any) => r[pk] === row[pk])) return
+      const schema = schemas[table]
+      // Support composite primary keys (array) or single primary key (string)
+      const pks: string[] = schema?.compositePrimaryKey ?? (schema?.primaryKey ? [schema.primaryKey] : [])
+      if (pks.length > 0) {
+        const isDuplicate = tables[table].some((r: any) =>
+          pks.every(pk => getRowVal(r, pk) !== null && getRowVal(r, pk) === getRowVal(row, pk))
+        )
+        if (isDuplicate) return
+      }
     }
 
     if (modifier === 'replace') {
-      const pk = schemas[table]?.primaryKey
-      if (pk && row[pk] !== null) tables[table] = tables[table].filter((r: any) => r[pk] !== row[pk])
+      const schema = schemas[table]
+      const pks: string[] = schema?.compositePrimaryKey ?? (schema?.primaryKey ? [schema.primaryKey] : [])
+      if (pks.length > 0) {
+        tables[table] = tables[table].filter((r: any) =>
+          !pks.every(pk => getRowVal(r, pk) !== null && getRowVal(r, pk) === getRowVal(row, pk))
+        )
+      }
     }
 
     tables[table].push(row)
     saveTables()
   } else if (/^UPDATE\b/i.test(sql)) {
-    const { setCols, conditions } = parseUpdate(sql)
+    const { setCols, setExprs, conditions } = parseUpdate(sql)
     let paramIdx = 0
     for (const row of tables[table]) {
       const condParams = params.slice(setCols.length)
       if (matchesRow(row, conditions, condParams)) {
         for (const col of setCols) {
-          row[col] = normalize(params[paramIdx++])
+          // Preserve original casing: find existing key or use as-is
+          const existingKey = Object.keys(row).find(k => k.toLowerCase() === col.toLowerCase()) ?? col
+          row[existingKey] = normalize(params[paramIdx++])
+        }
+        for (const se of setExprs) {
+          const result = evalExpr(se.expr, row)
+          if (result !== undefined) row[result.key] = normalize(result.value)
         }
       }
     }
@@ -241,7 +298,7 @@ export function queryAll(sql: string, params?: any[]): any[] {
 
   if (orderBy) {
     rows.sort((a: any, b: any) => {
-      const av = a[orderBy!.col]; const bv = b[orderBy!.col]
+      const av = getRowVal(a, orderBy!.col); const bv = getRowVal(b, orderBy!.col)
       if (av === undefined || av === null) return 1
       if (bv === undefined || bv === null) return -1
       const cmp = String(av).localeCompare(String(bv))
@@ -273,14 +330,23 @@ export function execBatch(sql: string): void {
       const colsMatch = stmt.match(/\(([\s\S]*?)\)\s*$/)
       if (colsMatch) {
         const colDefs = colsMatch[1].split(',').map(s => s.trim()).filter(s => !/^FOREIGN\s+KEY/i.test(s) && !/^PRIMARY\s+KEY/i.test(s))
+        // Detect composite primary key e.g. PRIMARY KEY (eventId, userId)
+        const compositePkMatch = colsMatch[1].match(/PRIMARY\s+KEY\s*\(([^)]+)\)/i)
         let pk: string | undefined
-        const pkMatch = colsMatch[1].match(/PRIMARY\s+KEY\s*\((\w+)\)/i)
-        if (pkMatch) pk = pkMatch[1].toLowerCase()
+        let compositePk: string[] | undefined
+        if (compositePkMatch) {
+          const pkCols = compositePkMatch[1].split(',').map(s => s.trim())
+          if (pkCols.length === 1) {
+            pk = pkCols[0]
+          } else {
+            compositePk = pkCols
+          }
+        }
 
-        schemas[tableName] = { name: tableName, columns: [], primaryKey: pk }
+        schemas[tableName] = { name: tableName, columns: [], primaryKey: pk, compositePrimaryKey: compositePk }
         for (const def of colDefs) {
           const m = def.match(/^\s*(\w+)\s+(\w+)(.*)/)
-          if (m) schemas[tableName].columns.push({ name: m[1].toLowerCase(), type: m[2], constraints: m[3] || '' })
+          if (m) schemas[tableName].columns.push({ name: m[1], type: m[2], constraints: m[3] || '' })
         }
       }
       saveTables()

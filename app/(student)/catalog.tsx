@@ -7,7 +7,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import { getAllEvents, Event } from '../../database/events'
 import { getFavoritesByUser, addFavorite, removeFavorite } from '../../database/favorites'
-import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate, getCategoryStyle } from '../../constants/theme'
+import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate, getCategoryStyle, getEventImage } from '../../constants/theme'
 import { SearchBar, Chip, Badge, EmptyState } from '../../components/ui'
 
 export default function CatalogScreen() {
@@ -88,34 +88,25 @@ export default function CatalogScreen() {
 
   function renderEvent({ item }: { item: Event }) {
     const fd = formatDate(item.startDateTime)
-    const catStyle = getCategoryStyle(item.category)
     const isFav = favoriteIds.has(item.id)
+    const imageUri = getEventImage(item.imageUrl, item.category)
 
     return (
       <TouchableOpacity style={styles.eventCard} onPress={() => router.push(`/event/${item.id}`)} activeOpacity={0.95}>
-        {item.imageUrl ? (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: item.imageUrl }} style={styles.image} />
-            <View style={styles.dateBadge}>
-              <Text style={styles.dateDay}>{fd.day}</Text>
-              <Text style={styles.dateMonth}>{fd.month}</Text>
-            </View>
-            {item.capacity && (
-              <View style={styles.capacityBadge}>
-                <Ionicons name="people" size={12} color="#fff" />
-                <Text style={styles.capacityText}>{item.registeredCount}/{item.capacity}</Text>
-              </View>
-            )}
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: imageUri! }} style={styles.image} />
+          <View style={styles.imageOverlay} />
+          <View style={styles.dateBadge}>
+            <Text style={styles.dateDay}>{fd.day}</Text>
+            <Text style={styles.dateMonth}>{fd.month}</Text>
           </View>
-        ) : (
-          <View style={[styles.imagePlaceholder, { backgroundColor: catStyle.bg }]}>
-            <Ionicons name="calendar" size={32} color={catStyle.text} />
-            <View style={[styles.dateBadge, { backgroundColor: catStyle.bg }]}>
-              <Text style={[styles.dateDay, { color: catStyle.text }]}>{fd.day}</Text>
-              <Text style={[styles.dateMonth, { color: catStyle.text }]}>{fd.month}</Text>
+          {item.capacity && (
+            <View style={styles.capacityBadge}>
+              <Ionicons name="people" size={12} color="#fff" />
+              <Text style={styles.capacityText}>{item.registeredCount}/{item.capacity}</Text>
             </View>
-          </View>
-        )}
+          )}
+        </View>
         <TouchableOpacity style={styles.favButton} onPress={() => toggleFavorite(item.id)}>
           <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={22} color={isFav ? Colors.favorite : Colors.textWhite} />
         </TouchableOpacity>
@@ -196,7 +187,7 @@ const styles = StyleSheet.create({
   },
   imageContainer: { position: 'relative', height: 120 },
   image: { width: '100%', height: 120 },
-  imagePlaceholder: { height: 120, justifyContent: 'center', alignItems: 'center' },
+  imageOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.12)' },
   dateBadge: {
     position: 'absolute', top: Spacing.sm, left: Spacing.sm,
     backgroundColor: Colors.overlay,

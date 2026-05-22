@@ -33,7 +33,7 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             await logout()
-            router.replace('/')
+            // _layout.tsx watches user state and redirects to '/' automatically
           },
         },
       ]

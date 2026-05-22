@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { execBatch, executeSql, queryAll, waitForDb } from './db'
 import { seedEvents } from '../constants/seed'
 
-const SCHEMA_VERSION = 'v4'
+const SCHEMA_VERSION = 'v5'
 
 export async function initDatabase() {
   await waitForDb()
@@ -59,10 +59,10 @@ export async function initDatabase() {
 
   if (prevVersion !== SCHEMA_VERSION) {
     await AsyncStorage.removeItem('@campusevents_tables')
-    execBatch('DELETE FROM events')
-    execBatch('DELETE FROM registrations')
-    execBatch('DELETE FROM favorites')
-    execBatch('DELETE FROM llm_results')
+    executeSql('DELETE FROM events')
+    executeSql('DELETE FROM registrations')
+    executeSql('DELETE FROM favorites')
+    executeSql('DELETE FROM llm_results')
     await AsyncStorage.setItem('@campus_db_version', SCHEMA_VERSION)
   }
 

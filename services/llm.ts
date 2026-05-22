@@ -71,7 +71,7 @@ export async function callLLM(
       'Authorization': `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'llama3-70b-8192',
+      model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: user },

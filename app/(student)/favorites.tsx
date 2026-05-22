@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useAuth } from '../../context/AuthContext'
 import { getEventById, Event } from '../../database/events'
 import { getFavoritesByUser, removeFavorite } from '../../database/favorites'
-import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate } from '../../constants/theme'
+import { Colors, FontSize, FontWeight, BorderRadius, Spacing, Shadow, formatDate, getEventImage } from '../../constants/theme'
 import { Badge, EmptyState, Screen } from '../../components/ui'
 
 export default function FavoritesScreen() {
@@ -39,9 +39,10 @@ export default function FavoritesScreen() {
 
   function renderEvent({ item }: { item: Event }) {
     const fd = formatDate(item.startDateTime)
+    const imageUri = getEventImage(item.imageUrl, item.category)
     return (
       <TouchableOpacity style={styles.card} onPress={() => router.push(`/event/${item.id}`)} activeOpacity={0.95}>
-        {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.cardImage} />}
+        <Image source={{ uri: imageUri! }} style={styles.cardImage} />
         <View style={styles.cardBody}>
           <Badge label={item.category} variant="category" />
           <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
