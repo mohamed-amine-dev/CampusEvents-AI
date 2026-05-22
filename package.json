@@ -1,0 +1,39 @@
+{
+  "name": "campusevents-ai",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@expo/metro-runtime": "~56.0.11",
+    "@expo/vector-icons": "^15.1.1",
+    "@react-native-async-storage/async-storage": "^3.1.0",
+    "expo": "~56.0.3",
+    "expo-constants": "^56.0.14",
+    "expo-font": "^56.0.5",
+    "expo-linking": "^56.0.11",
+    "expo-router": "^56.2.5",
+    "expo-secure-store": "^56.0.4",
+    "expo-splash-screen": "^56.0.9",
+    "expo-sqlite": "^56.0.4",
+    "expo-status-bar": "~56.0.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-gesture-handler": "^2.31.2",
+    "react-native-reanimated": "^4.3.1",
+    "react-native-safe-area-context": "^5.8.0",
+    "react-native-screens": "^4.25.2",
+    "react-native-web": "^0.21.2",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "private": true
+}

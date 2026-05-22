@@ -1,0 +1,64 @@
+import { useState, useCallback } from 'react'
+import { View, FlatList, StyleSheet } from 'react-native'
+import { useRouter, useFocusEffect } from 'expo-router'
+import { EventCard } from '../../components/EventCard'
+import { EmptyState } from '../../components/ui/EmptyState'
+import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
+import { useTheme } from '../../context/ThemeContext'
+import { useAuth } from '../../context/AuthContext'
+import { getRegistrationsByUser } from '../../database/registrations'
+import { getEventById } from '../../database/events'
+import { Event } from '../../types'
+
+export default function RegistrationsScreen() {
+  const { theme } = useTheme()
+  const { user } = useAuth()
+  const router = useRouter()
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const loadRegistrations = useCallback(() => {
+    if (!user) return
+    setLoading(true)
+    try {
+      const regs = getRegistrationsByUser(user.email)
+      const eventList = regs
+        .map((r) => getEventById(r.eventId))
+        .filter((e): e is Event => e !== undefined)
+      setEvents(eventList)
+    } catch (e) {
+      console.warn(e)
+    }
+    setLoading(false)
+  }, [user])
+
+  useFocusEffect(useCallback(() => { loadRegistrations() }, [loadRegistrations]))
+
+  if (loading) return <LoadingSpinner />
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <FlatList
+        data={events}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <EmptyState icon="📋" title="Aucune inscription" message="Inscrivez-vous à des événements depuis le catalogue" />
+        }
+        renderItem={({ item }) => (
+          <EventCard event={item} onPress={() => router.push(`/event/${item.id}`)} />
+        )}
+      />
+    </View>
+  )
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  list: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+})
