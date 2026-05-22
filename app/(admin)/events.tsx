@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, RefreshControl, Alert } from 'react-native'
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, RefreshControl, Alert, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -16,10 +16,16 @@ export default function AdminEventsScreen() {
   const [refreshing, setRefreshing] = useState(false)
 
   function handleLogout() {
-    Alert.alert('Déconnexion', 'Es-tu sûr de vouloir te déconnecter ?', [
-      { text: 'Annuler', style: 'cancel' },
-      { text: 'Se déconnecter', style: 'destructive', onPress: async () => { await logout() } },
-    ])
+    if (Platform.OS === 'web') {
+      if (window.confirm('Es-tu sûr de vouloir te déconnecter ?')) {
+        logout()
+      }
+    } else {
+      Alert.alert('Déconnexion', 'Es-tu sûr de vouloir te déconnecter ?', [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Se déconnecter', style: 'destructive', onPress: async () => { await logout() } },
+      ])
+    }
   }
 
   function loadEvents() {
@@ -35,21 +41,28 @@ export default function AdminEventsScreen() {
   }
 
   function handleDelete(id: string, title: string) {
-    Alert.alert(
-      'Supprimer',
-      `Supprimer "${title}" ? Cette action est irréversible.`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: () => {
-            deleteEvent(id)
-            loadEvents()
+    if (Platform.OS === 'web') {
+      if (window.confirm(`Supprimer "${title}" ? Cette action est irréversible.`)) {
+        deleteEvent(id)
+        loadEvents()
+      }
+    } else {
+      Alert.alert(
+        'Supprimer',
+        `Supprimer "${title}" ? Cette action est irréversible.`,
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Supprimer',
+            style: 'destructive',
+            onPress: () => {
+              deleteEvent(id)
+              loadEvents()
+            },
           },
-        },
-      ]
-    )
+        ]
+      )
+    }
   }
 
   function renderEvent({ item }: { item: Event }) {

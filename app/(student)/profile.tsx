@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -23,21 +23,26 @@ export default function ProfileScreen() {
   }
 
   async function handleLogout() {
-    Alert.alert(
-      'Déconnexion',
-      'Es-tu sûr de vouloir te déconnecter ?',
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Se déconnecter',
-          style: 'destructive',
-          onPress: async () => {
-            await logout()
-            // _layout.tsx watches user state and redirects to '/' automatically
+    if (Platform.OS === 'web') {
+      if (window.confirm('Es-tu sûr de vouloir te déconnecter ?')) {
+        await logout()
+      }
+    } else {
+      Alert.alert(
+        'Déconnexion',
+        'Es-tu sûr de vouloir te déconnecter ?',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Se déconnecter',
+            style: 'destructive',
+            onPress: async () => {
+              await logout()
+            },
           },
-        },
-      ]
-    )
+        ]
+      )
+    }
   }
 
   if (!user) return null
