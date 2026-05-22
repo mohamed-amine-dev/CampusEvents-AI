@@ -6,15 +6,21 @@ import { AuthProvider, useAuth } from '../context/AuthContext'
 import { initDatabase } from '../database/init'
 import { View, ActivityIndicator } from 'react-native'
 
-function useProtectedRoute(user: any, isLoading: boolean) {
+function RootLayoutContent() {
+  const { user, isLoading } = useAuth()
+  const { theme } = useTheme()
   const segments = useSegments()
   const router = useRouter()
-  const initialized = useRef(false)
+  const dbReady = useRef(false)
+
+  useEffect(() => {
+    if (dbReady.current) return
+    try { initDatabase() } catch (e) { console.warn('DB init error:', e) }
+    dbReady.current = true
+  }, [])
 
   useEffect(() => {
     if (isLoading) return
-    if (initialized.current) return
-    initialized.current = true
 
     const inAuthGroup = segments[0] === 'login'
 
@@ -27,22 +33,7 @@ function useProtectedRoute(user: any, isLoading: boolean) {
         router.replace('/(student)')
       }
     }
-  }, [user, isLoading, segments])
-}
-
-function RootLayoutContent() {
-  const { user, isLoading } = useAuth()
-  const { theme } = useTheme()
-  const dbReady = useRef(false)
-
-  useEffect(() => {
-    if (!dbReady.current) {
-      try { initDatabase() } catch (e) { console.warn('DB init error:', e) }
-      dbReady.current = true
-    }
-  }, [])
-
-  useProtectedRoute(user, isLoading)
+  }, [user, isLoading])
 
   if (isLoading) {
     return (
