@@ -25,7 +25,7 @@ function RootContent() {
 
 export default function RootLayout() {
   useEffect(() => {
-    try { initDatabase() } catch (e) { console.warn('DB init error:', e) }
+    initDatabase().catch((e) => console.warn('DB init error:', e))
   }, [])
 
   return (

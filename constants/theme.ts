@@ -111,6 +111,7 @@ export function getCategoryStyle(category: string) {
 
 export function formatDate(dateStr: string): { day: string; month: string; time: string } {
   const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return { day: '--', month: '---', time: '--:--' }
   const day = String(d.getDate()).padStart(2, '0')
   const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
   const month = months[d.getMonth()]
@@ -121,6 +122,7 @@ export function formatDate(dateStr: string): { day: string; month: string; time:
 
 export function formatDateLong(dateStr: string): string {
   const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return 'Date non disponible'
   const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
   const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
   return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`

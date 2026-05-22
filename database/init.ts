@@ -1,7 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { execBatch, executeSql, queryAll } from './db'
 import { seedEvents } from '../constants/seed'
 
-export function initDatabase() {
+const SCHEMA_VERSION = 'v2'
+
+export async function initDatabase() {
   execBatch(`
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
@@ -49,6 +52,21 @@ export function initDatabase() {
 
     PRAGMA foreign_keys = ON;
   `)
+
+  const prevVersion = await AsyncStorage.getItem('@campus_db_version')
+
+  if (prevVersion !== SCHEMA_VERSION) {
+    if (prevVersion !== null) {
+      await AsyncStorage.removeItem('@campusevents_tables')
+      execBatch(`
+        DELETE FROM events;
+        DELETE FROM registrations;
+        DELETE FROM favorites;
+        DELETE FROM llm_results;
+      `)
+    }
+    await AsyncStorage.setItem('@campus_db_version', SCHEMA_VERSION)
+  }
 
   const count = queryAll('SELECT COUNT(*) as count FROM events') as { count: number }[]
   if (count[0].count === 0) {
