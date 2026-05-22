@@ -84,6 +84,8 @@ export default function EventDetailScreen() {
   const catStyle = getCategoryStyle(event.category)
   const capacityPercent = event.capacity ? Math.min(event.registeredCount / event.capacity * 100, 100) : 0
   const heroImageUri = getEventImage(event.imageUrl, event.category)
+  const isPast = new Date(event.startDateTime) < new Date()
+  const isFull = !!event.capacity && event.registeredCount >= event.capacity
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -166,13 +168,25 @@ export default function EventDetailScreen() {
           </View>
         )}
 
-        <Button
-          title={isRegistered ? 'Annuler mon inscription' : "S'inscrire"}
-          onPress={handleRegister}
-          variant={isRegistered ? 'secondary' : 'primary'}
-          size="lg"
-          style={{ marginTop: Spacing.xl }}
-        />
+        {isPast ? (
+          <View style={styles.pastBanner}>
+            <Ionicons name="time-outline" size={18} color={Colors.textMuted} />
+            <Text style={styles.pastText}>Cet événement est terminé — les inscriptions sont fermées</Text>
+          </View>
+        ) : isFull && !isRegistered ? (
+          <View style={styles.pastBanner}>
+            <Ionicons name="people-outline" size={18} color={Colors.error} />
+            <Text style={[styles.pastText, { color: Colors.error }]}>Complet — plus de places disponibles</Text>
+          </View>
+        ) : (
+          <Button
+            title={isRegistered ? 'Annuler mon inscription' : "S'inscrire"}
+            onPress={handleRegister}
+            variant={isRegistered ? 'secondary' : 'primary'}
+            size="lg"
+            style={{ marginTop: Spacing.xl }}
+          />
+        )}
       </View>
     </ScrollView>
   )
@@ -226,4 +240,11 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.primaryBorder,
   },
   tagText: { fontSize: FontSize.caption, fontWeight: FontWeight.medium, color: Colors.primary },
+  pastBanner: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm,
+    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
+    paddingVertical: Spacing.md, paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.md, marginTop: Spacing.xl,
+  },
+  pastText: { fontSize: FontSize.body, fontWeight: FontWeight.medium, color: Colors.textMuted },
 })

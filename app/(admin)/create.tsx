@@ -27,6 +27,7 @@ export default function CreateEventScreen() {
     organizerName: '',
     capacity: '',
     imageUrl: '',
+    tags: '',
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -38,6 +39,20 @@ export default function CreateEventScreen() {
     if (!form.startTime.trim()) errs.startTime = 'L\'heure est requise'
     if (!form.locationName.trim()) errs.locationName = 'Le lieu est requis'
     if (!form.organizerName.trim()) errs.organizerName = "L'organisateur est requis"
+
+    if (form.capacity) {
+      const cap = parseInt(form.capacity)
+      if (isNaN(cap) || cap <= 0) errs.capacity = 'La capacité doit être un nombre positif'
+    }
+
+    if (form.startDate && form.startTime && form.endDate && form.endTime) {
+      const startDateTime = new Date(`${form.startDate}T${form.startTime}`)
+      const endDateTime = new Date(`${form.endDate}T${form.endTime}`)
+      if (endDateTime <= startDateTime) {
+        errs.endDate = 'La fin doit être après le début'
+      }
+    }
+
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -61,7 +76,7 @@ export default function CreateEventScreen() {
       organizerName: form.organizerName.trim(),
       capacity: form.capacity ? parseInt(form.capacity) : undefined,
       imageUrl: form.imageUrl.trim() || undefined,
-      tags: [],
+      tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
     })
 
     setLoading(false)
@@ -109,7 +124,8 @@ export default function CreateEventScreen() {
         <TextField label="Lieu" value={form.locationName} onChangeText={(v) => updateField('locationName', v)} error={errors.locationName} placeholder="Nom du lieu" />
         <TextField label="Adresse (optionnel)" value={form.locationAddress} onChangeText={(v) => updateField('locationAddress', v)} placeholder="Adresse complète" />
         <TextField label="Organisateur" value={form.organizerName} onChangeText={(v) => updateField('organizerName', v)} error={errors.organizerName} placeholder="Nom de l'organisateur" />
-        <TextField label="Capacité (optionnel)" value={form.capacity} onChangeText={(v) => updateField('capacity', v)} placeholder="Nombre de places" keyboardType="number-pad" />
+        <TextField label="Capacité (optionnel)" value={form.capacity} onChangeText={(v) => updateField('capacity', v)} error={errors.capacity} placeholder="Nombre de places" keyboardType="number-pad" />
+        <TextField label="Tags (optionnel)" value={form.tags} onChangeText={(v) => updateField('tags', v)} placeholder="IA, React, Atelier..." />
         <TextField label="Image URL (optionnel)" value={form.imageUrl} onChangeText={(v) => updateField('imageUrl', v)} placeholder="https://..." keyboardType="url" />
 
         <Button title="Créer l'événement" onPress={handleCreate} loading={loading} size="lg" style={{ marginTop: Spacing.xl }} />

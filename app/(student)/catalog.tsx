@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, RefreshControl } from 'react-native'
+import { View, Text, FlatList, ScrollView, TouchableOpacity, StyleSheet, Image, RefreshControl } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -20,6 +20,7 @@ export default function CatalogScreen() {
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Tout')
+  const [selectedPeriod, setSelectedPeriod] = useState('À venir')
   const [refreshing, setRefreshing] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set())
 
@@ -28,7 +29,7 @@ export default function CatalogScreen() {
   function loadEvents() {
     const all = getAllEvents()
     setEvents(all)
-    applyFilters(all, searchQuery, selectedCategory)
+    applyFilters(all, searchQuery, selectedCategory, selectedPeriod)
   }
 
   function loadFavorites() {
@@ -37,8 +38,11 @@ export default function CatalogScreen() {
     setFavoriteIds(new Set(favs.map((f) => f.eventId)))
   }
 
-  function applyFilters(all: Event[], query: string, category: string) {
+  function applyFilters(all: Event[], query: string, category: string, period: string = selectedPeriod) {
     let filtered = all
+    const now = new Date()
+    if (period === 'À venir') filtered = filtered.filter(e => new Date(e.startDateTime) >= now)
+    if (period === 'Passés')  filtered = filtered.filter(e => new Date(e.startDateTime) < now)
     if (query.trim()) {
       const q = query.toLowerCase()
       filtered = filtered.filter((e) => e.title.toLowerCase().includes(q) || e.description.toLowerCase().includes(q))
@@ -58,8 +62,8 @@ export default function CatalogScreen() {
   }, [user])
 
   useEffect(() => {
-    applyFilters(events, searchQuery, selectedCategory)
-  }, [searchQuery, selectedCategory, events])
+    applyFilters(events, searchQuery, selectedCategory, selectedPeriod)
+  }, [searchQuery, selectedCategory, selectedPeriod, events])
 
   useFocusEffect(
     useCallback(() => {
@@ -136,6 +140,13 @@ export default function CatalogScreen() {
       </View>
 
       <View style={styles.chipsRow}>
+        {/* Period filter */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.sm, paddingHorizontal: Spacing.xl, marginBottom: Spacing.sm }}>
+          {['À venir', 'Passés', 'Tout'].map((p) => (
+            <Chip key={p} label={p} selected={selectedPeriod === p} onPress={() => setSelectedPeriod(p)} />
+          ))}
+        </ScrollView>
+        {/* Category filter */}
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
